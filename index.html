@@ -1,0 +1,287 @@
+<!doctype html><html lang="tr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aşkım Erkek Kuaförü — Tek Sayfa</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0f13;--panel:#0f1317;--line:#2a313a;--text:#e6ecf3;--muted:#9aa6b2;--gold:#d4af37;--gold2:#f4d878;--h:42px}
+*{box-sizing:border-box} html,body{margin:0;background:#000;color:var(--text);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(1000px 600px at 30% -10%,#1a2028 0%,#0b0f13 45%,#050607 100%);z-index:-2}
+body::after{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.7));z-index:-1}
+.header{max-width:1100px;margin:0 auto;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:44px;height:44px;border:2px solid var(--gold);border-radius:50%;display:grid;place-items:center;background:rgba(18,22,28,.7)}
+.logo::before{content:"✂";color:var(--gold);font-size:20px}
+.title{font-weight:700}
+.btncol{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+@media(min-width:680px){.btncol{flex-direction:row}}
+.pill{height:32px;border:1px solid var(--gold);border-radius:10px;background:rgba(18,22,28,.7);color:#fff;padding:0 10px;display:flex;align-items:center;gap:6px;text-decoration:none;font-weight:600}
+.pill:hover{background:linear-gradient(90deg,var(--gold),var(--gold2));color:#000}
+main{display:flex;justify-content:center}
+.container{width:100%;max-width:1000px;padding:0 16px 40px}
+.card{background:rgba(15,19,23,.82);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+h1{font-size:28px;margin:6px 0 2px} h2{font-size:14px;color:var(--muted);margin:0 0 14px} hr{border:none;border-top:1px solid var(--line);margin:10px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px} @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+label{font-size:12px;font-weight:700;margin:0 0 6px 2px}
+input,select{height:var(--h);background:#151a20;border:1px solid var(--line);color:#fff;border-radius:8px;padding:0 12px;width:100%}
+.btn{height:42px;border:2px solid var(--gold);border-radius:10px;background:#151a20;color:#fff;font-weight:700;cursor:pointer}
+.btn:hover{background:linear-gradient(90deg,var(--gold),var(--gold2));color:#000}
+.small{height:32px}
+.timegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#12171c;min-height:46px}
+@media(max-width:720px){.timegrid{grid-template-columns:repeat(2,1fr)}}
+.slot{height:36px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#151a20;font-weight:600;cursor:pointer}
+.slot.active{box-shadow:0 0 0 3px var(--gold) inset}
+.slot.disabled{opacity:.45;pointer-events:none;position:relative}
+.slot.disabled::after{content:"DOLU";position:absolute;right:6px;bottom:4px;font-size:10px;color:#cfd7e2}
+.drawer-btn{position:fixed;left:18px;bottom:18px;width:46px;height:46px;border-radius:50%;background:#0e1216;border:2px solid var(--gold);display:grid;place-items:center;box-shadow:0 8px 22px rgba(0,0,0,.45);cursor:pointer;z-index:20}
+.drawer{position:fixed;inset:0 0 0 auto;max-width:320px;width:86vw;background:#0f1317;border-left:1px solid var(--line);transform:translateX(100%);transition:transform .25s ease;z-index:30;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.nav a{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;margin:8px 12px;color:#e5eaf2;text-decoration:none;border:1px solid transparent}
+.nav a.active,.nav a:hover{background:#121820;border-color:#202733}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:#121820;border:1px solid #202733;border-radius:10px;padding:14px}
+.table{border:1px solid #202733;border-radius:10px;overflow:auto}
+table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #202733;text-align:left}
+.list{border:1px solid #202733;border-radius:10px;overflow:hidden}
+.row{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid #202733}.row:last-child{border-bottom:none}
+.badge{background:#223046;border:1px solid #2c3b52;color:#cfe2ff;padding:2px 8px;border-radius:999px;font-size:12px}
+.section{display:none}.section.active{display:block}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111;border:1px solid var(--gold);border-radius:8px;padding:10px 14px;display:none;z-index:10001}
+.toast.show{display:block}
+</style>
+</head><body>
+<header class="header">
+  <div class="brand"><div class="logo"></div><div><div class="title">Aşkım Erkek Kuaförü</div></div></div>
+  <div class="btncol"><a class="pill" href="#admin">🛠️ Admin</a><a class="pill" href="#user">👤 Müşteri</a></div>
+</header>
+<main><div class="container">
+<section id="home" class="section active"><div class="card">
+  <h1>Randevu</h1><h2>ERKEK KUAFÖRÜ</h2><hr>
+  <div class="grid2">
+    <div><label>Berber</label><select id="staff"><option value="">Farketmez</option></select></div>
+    <div><label>Hizmet</label><select id="service"><option value="">Hizmet seçin</option></select></div>
+    <div><label>Tarih</label><input id="date" type="date"></div>
+    <div><label>Saat</label><div id="timegrid" class="timegrid"></div></div>
+  </div>
+  <div class="grid2" style="margin-top:10px">
+    <div><label>Ad Soyad</label><input id="name" type="text" placeholder="Adınız ve Soyadınız"></div>
+    <div><label>Telefon</label><input id="phone" type="tel" placeholder="05xxxxxxxxx"></div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+    <button id="bookBtn" class="btn">Randevu Al</button>
+    <button id="goUser" class="btn small">Randevularım</button>
+  </div>
+</div></section>
+
+<section id="admin" class="section"><div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h1>Yönetici</h1>
+    <input id="adminPass" type="password" placeholder="Şifre (2525)" style="height:36px;width:200px;border-radius:8px;border:1px solid var(--line);background:#151a20;color:#fff">
+  </div>
+  <div class="stat-grid" style="margin:10px 0 16px"><div class="stat"><div class="muted">Toplam Randevu</div><div id="statTotal" style="font-size:24px;font-weight:700">0</div></div>
+  <div class="stat"><div class="muted">Bugün</div><div id="statToday" style="font-size:24px;font-weight:700">0</div></div></div>
+  <div class="table"><table id="apptTable"><thead><tr><th>Tarih</th><th>Saat</th><th>Berber</th><th>Hizmet</th><th>Müşteri</th><th>Telefon</th><th></th></tr></thead><tbody></tbody></table></div>
+</div></section>
+
+<section id="user" class="section"><div class="card">
+  <h1>Müşteri Hesabı</h1>
+  <div class="grid2"><div><input id="userName" type="text" placeholder="Ad Soyad"></div><div><input id="userPass" type="password" placeholder="Şifre"></div></div>
+  <div style="margin-top:10px"><button id="userLogin" class="btn small">Giriş / Kayıt</button></div>
+  <div id="mineBox" class="list" style="margin-top:12px"></div>
+</div></section>
+</div></main>
+
+<div id="drawerBtn" class="drawer-btn" title="Yönetici Paneli">☰</div>
+<aside id="drawer" class="drawer" aria-hidden="true">
+  <header><strong>Menü</strong><button id="drawerClose" class="btn small">Kapat</button></header>
+  <nav class="nav">
+    <a href="#" data-page="dash" class="active">🏠 Randevu</a>
+    <a href="#" data-page="panel">🧩 Yönetici Paneli</a>
+    <a href="#" data-page="appts">📅 Randevular</a>
+    <a href="#" data-page="services">🧾 Hizmetler</a>
+    <a href="#" data-page="barbers">💈 Berberler</a>
+    <a href="#" data-page="reports">📊 Raporlar</a>
+    <a href="#" data-page="settings">⚙️ Ayarlar</a>
+  </nav>
+  <div id="drawerPage" style="padding:10px 12px 18px 12px"></div>
+</aside>
+<div id="toast" class="toast"></div>
+
+<script>
+const KSET='askim_settings_v2', KBOOK='askim_bookings_v2', KUSER='askim_users_v2', KSESS='askim_session_v2';
+function defSettings(){return {start:'09:00',end:'21:00',step:30,services:[{name:'Saç',mins:30,price:400},{name:'Sakal',mins:20,price:200},{name:'Saç + Sakal',mins:45,price:550}],barbers:['Ahmet','Aziz','Usta'],closedDays:[],closedDates:[]};}
+function S(){try{return JSON.parse(localStorage.getItem(KSET))||defSettings();}catch(e){return defSettings();}}
+function saveS(v){localStorage.setItem(KSET,JSON.stringify(v));}
+function B(){return JSON.parse(localStorage.getItem(KBOOK)||'[]');}
+function saveB(v){localStorage.setItem(KBOOK,JSON.stringify(v));}
+function U(){return JSON.parse(localStorage.getItem(KUSER)||'[]');}
+function saveU(v){localStorage.setItem(KUSER,JSON.stringify(v));}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+const todayISO=()=>{const d=new Date(),m=('0'+(d.getMonth()+1)).slice(-2),da=('0'+d.getDate()).slice(-2);return d.getFullYear()+'-'+m+'-'+da;};
+
+function show(id){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo({top:0});}
+document.querySelectorAll('.pill').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();show(a.getAttribute('href').replace('#',''));}));
+
+function fillBarbers(){const sel=document.getElementById('staff');sel.innerHTML='<option value="">Farketmez</option>';S().barbers.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o);});}
+function fillServices(){const sel=document.getElementById('service');sel.innerHTML='<option value="">Hizmet seçin</option>';S().services.forEach(sv=>{const o=document.createElement('option');o.value=sv.name;o.textContent=sv.name;sel.appendChild(o);});}
+
+function buildSlots(){
+  const grid=document.getElementById('timegrid');grid.innerHTML='';
+  const date=document.getElementById('date').value; if(!date) return;
+  const set=S(); const staff=document.getElementById('staff').value;
+  const dt=new Date(date+'T00:00:00'); const dow=dt.getDay();
+  if((set.closedDays||[]).includes(dow) || (set.closedDates||[]).includes(date)){
+    grid.innerHTML='<div class="slot disabled" style="grid-column:1/-1">Kapalı</div>'; return;
+  }
+  const occ={}; B().filter(x=>x.date===date).forEach(r=>{occ[r.time]=occ[r.time]||new Set(); if(r.staff) occ[r.time].add(r.staff);});
+  const toHM=d=>('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2), addM=(d,m)=>new Date(d.getTime()+m*60000);
+  let cur=new Date(date+'T'+set.start+':00'), end=new Date(date+'T'+set.end+':00');
+  while(cur<=end){
+    const hm=toHM(cur), taken=occ[hm]||new Set(); let disabled=false;
+    if(staff) disabled=taken.has(staff); else disabled=taken.size>=S().barbers.length;
+    const div=document.createElement('div');div.className='slot'; div.textContent=hm; div.dataset.time=hm;
+    if(disabled) div.classList.add('disabled');
+    div.onclick=()=>{if(div.classList.contains('disabled'))return;document.querySelectorAll('.slot.active').forEach(s=>s.classList.remove('active'));div.classList.add('active');};
+    grid.appendChild(div); cur=addM(cur,set.step);
+  }
+}
+function refreshHome(){fillBarbers();fillServices(); if(!document.getElementById('date').value) document.getElementById('date').value=todayISO(); buildSlots();}
+['date','staff','service'].forEach(id=>document.getElementById(id).addEventListener('change',buildSlots));
+
+document.getElementById('bookBtn').addEventListener('click',()=>{
+  const name=document.getElementById('name').value.trim(), phone=document.getElementById('phone').value.trim(),
+        date=document.getElementById('date').value, service=document.getElementById('service').value,
+        staff=document.getElementById('staff').value, act=document.querySelector('.slot.active');
+  if(!name||!phone) return toast('Ad & Telefon gerekli'); if(!date) return toast('Tarih seçin'); if(!act) return toast('Saat seçin');
+  const time=act.dataset.time, arr=B();
+  if(staff){ if(arr.some(x=>x.date===date&&x.time===time&&x.staff===staff)) return toast('Bu berber o saatte dolu'); }
+  else { if(arr.filter(x=>x.date===date&&x.time===time).length>=S().barbers.length) return toast('Bu saat tamamen dolu'); }
+  const sess=JSON.parse(localStorage.getItem(KSESS)||'{}'); const userId=sess.user||null;
+  arr.push({id:'b'+Date.now(),name,phone,date,time,service,staff,userId}); saveB(arr); toast('✅ Randevu alındı'); buildSlots(); updateStats(); loadApptTable();
+});
+
+function updateStats(){document.getElementById('statTotal').textContent=B().length;document.getElementById('statToday').textContent=B().filter(x=>x.date===todayISO()).length;}
+function loadApptTable(){
+  const tb=document.querySelector('#apptTable tbody'); tb.innerHTML='';
+  B().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.date}</td><td>${r.time}</td><td>${r.staff||'Farketmez'}</td><td>${r.service||'-'}</td><td>${r.name}</td><td>${r.phone}</td>
+      <td><button class="btn small" data-id="${r.id}">Sil</button></td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>{saveB(B().filter(x=>x.id!==b.dataset.id)); loadApptTable(); updateStats(); buildSlots();});
+}
+
+const drawer=document.getElementById('drawer'); document.getElementById('drawerBtn').onclick=()=>drawer.classList.add('open');
+document.getElementById('drawerClose').onclick=()=>drawer.classList.remove('open');
+document.querySelectorAll('.nav a').forEach(a=>a.onclick=(e)=>{e.preventDefault();document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');renderDrawer(a.dataset.page);});
+
+function renderDrawer(page){
+  const el=document.getElementById('drawerPage'), s=S();
+  if(page==='dash'){
+    el.innerHTML=`<div class='stat-grid'><div class='stat'><div class='muted'>Toplam Randevu</div><div style='font-size:26px;font-weight:700'>${B().length}</div></div>
+    <div class='stat'><div class='muted'>Bugün</div><div style='font-size:26px;font-weight:700'>${B().filter(x=>x.date===todayISO()).length}</div></div></div>`;
+  }
+  if(page==='panel'){
+    el.innerHTML=`<div class='stat'><div class='grid2'>
+      <div><label>Açılış</label><input id='setStart' type='time' value='${s.start}'></div>
+      <div><label>Kapanış</label><input id='setEnd' type='time' value='${s.end}'></div>
+      <div><label>Adım (dk)</label><input id='setStep' type='number' min='5' step='5' value='${s.step}'></div>
+      <div><label>Kapatılan Günler (0=Paz,6=Cts)</label><input id='setClosedDays' type='text' value='${(s.closedDays||[]).join(",")}' placeholder='Örn: 0,6'></div>
+    </div><div style='margin-top:10px'><button id='savePanel' class='btn small'>Kaydet</button></div></div>`;
+    document.getElementById('savePanel').onclick=()=>{
+      const ss=S();
+      ss.start=document.getElementById('setStart').value;
+      ss.end=document.getElementById('setEnd').value;
+      ss.step=parseInt(document.getElementById('setStep').value)||30;
+      ss.closedDays=(document.getElementById('setClosedDays').value||'').split(',').map(x=>x.trim()).filter(Boolean).map(x=>parseInt(x)).filter(x=>!isNaN(x));
+      saveS(ss); toast('Ayarlar kaydedildi'); refreshHome();
+    };
+  }
+  if(page==='appts'){
+    const rows=B().map(r=>`<tr><td>${r.date}</td><td>${r.time}</td><td>${r.staff||'Farketmez'}</td><td>${r.service||'-'}</td><td>${r.name}</td><td>${r.phone}</td></tr>`).join('');
+    el.innerHTML=`<div class='table'><table><thead><tr><th>Tarih</th><th>Saat</th><th>Berber</th><th>Hizmet</th><th>Müşteri</th><th>Telefon</th></tr></thead><tbody>${rows||''}</tbody></table></div>`;
+  }
+  if(page==='services'){
+    el.innerHTML=`<div class='list' id='svcList'></div>
+      <div style='display:flex;gap:8px;margin-top:10px'>
+        <input id='svcName' placeholder='Hizmet adı' class='small' style='height:36px;border-radius:8px;border:1px solid #202733;background:#121820;color:#fff;padding:0 10px'>
+        <input id='svcMin' type='number' placeholder='dk' class='small' style='height:36px;width:90px;border-radius:8px;border:1px solid #202733;background:#121820;color:#fff;padding:0 10px'>
+        <input id='svcPrice' type='number' placeholder='₺' class='small' style='height:36px;width:110px;border-radius:8px;border:1px solid #202733;background:#121820;color:#fff;padding:0 10px'>
+        <button id='svcAdd' class='btn small'>Ekle</button>
+      </div>`;
+    drawServices();
+    document.getElementById('svcAdd').onclick=()=>{
+      const n=document.getElementById('svcName').value.trim();
+      const m=parseInt(document.getElementById('svcMin').value)||30;
+      const p=parseInt(document.getElementById('svcPrice').value)||0;
+      if(!n) return;
+      const ss=S(); ss.services.push({name:n,mins:m,price:p}); saveS(ss); drawServices(); fillServices(); toast('Eklendi');
+    };
+  }
+  if(page==='barbers'){
+    el.innerHTML=`<div class='list' id='barList'></div>
+      <div style='display:flex;gap:8px;margin-top:10px'>
+        <input id='barName' placeholder='Berber adı' class='small' style='height:36px;border-radius:8px;border:1px solid #202733;background:#121820;color:#fff;padding:0 10px'>
+        <button id='barAdd' class='btn small'>Ekle</button>
+      </div>`;
+    drawBarbers();
+    document.getElementById('barAdd').onclick=()=>{
+      const n=document.getElementById('barName').value.trim(); if(!n) return;
+      const ss=S(); ss.barbers.push(n); saveS(ss); drawBarbers(); fillBarbers(); toast('Eklendi');
+    };
+  }
+  if(page==='reports'){
+    const byBar=Object.fromEntries(S().barbers.map(b=>[b,0])); B().forEach(r=>{if(r.staff) byBar[r.staff]=(byBar[r.staff]||0)+1;});
+    const barRows=Object.entries(byBar).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+    const bySvc={}; B().forEach(r=>bySvc[r.service]=(bySvc[r.service]||0)+1);
+    const svcRows=Object.entries(bySvc).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+    el.innerHTML=`<div class='table'><table><thead><tr><th>Berber</th><th>Adet</th></tr></thead><tbody>${barRows}</tbody></table></div>
+      <div class='table' style='margin-top:10px'><table><thead><tr><th>Hizmet</th><th>Adet</th></tr></thead><tbody>${svcRows}</tbody></table></div>`;
+  }
+  if(page==='settings'){
+    el.innerHTML=`<div class='stat'><div class='grid2'>
+      <div><label>Başlangıç</label><input id='stA' type='time' value='${s.start}'></div>
+      <div><label>Bitiş</label><input id='stB' type='time' value='${s.end}'></div>
+      <div><label>Adım</label><input id='stS' type='number' value='${s.step}'></div>
+      <div><label>Kapalı Tarihler (YYYY-MM-DD, virgül)</label><input id='closedDates' type='text' value='${(s.closedDates||[]).join(",")}'></div>
+    </div><div style='margin-top:10px'><button id='stSave' class='btn small'>Kaydet</button></div></div>`;
+    document.getElementById('stSave').onclick=()=>{
+      const ss=S(); ss.start=document.getElementById('stA').value; ss.end=document.getElementById('stB').value; ss.step=parseInt(document.getElementById('stS').value)||30;
+      ss.closedDates=(document.getElementById('closedDates').value||'').split(',').map(x=>x.trim()).filter(Boolean);
+      saveS(ss); toast('Kaydedildi'); refreshHome();
+    };
+  }
+}
+function drawServices(){const box=document.getElementById('svcList');const s=S(); box.innerHTML=''; s.services.forEach((sv,i)=>{const row=document.createElement('div');row.className='row';
+  row.innerHTML=`<div><strong>${sv.name}</strong> <span class='badge'>${sv.mins} dk</span> <span class='badge'>₺${sv.price}</span></div>
+                 <div><button class='btn small' data-i='${i}'>Sil</button></div>`; box.appendChild(row);});
+  box.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{const ss=S(); ss.services.splice(parseInt(b.dataset.i),1); saveS(ss); drawServices(); fillServices();});}
+function drawBarbers(){const box=document.getElementById('barList');const s=S(); box.innerHTML=''; s.barbers.forEach((nm,i)=>{const row=document.createElement('div');row.className='row';
+  row.innerHTML=`<div><strong>${nm}</strong></div><div><button class='btn small' data-i='${i}'>Sil</button></div>`; box.appendChild(row);});
+  box.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{const ss=S(); ss.barbers.splice(parseInt(b.dataset.i),1); saveS(ss); drawBarbers(); fillBarbers();});}
+
+function renderMine(){
+  const sess=JSON.parse(localStorage.getItem(KSESS)||'{}'), my=document.getElementById('mineBox');
+  if(!sess.user){ my.innerHTML='<div class="row">Giriş yapmadınız</div>'; return; }
+  const rows=B().filter(x=>x.userId===sess.user).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
+  .map(r=>`<div class="row"><div><strong>${r.date} ${r.time}</strong> • ${r.staff||'Farketmez'} • ${r.service||'-'}</div>
+           <div><button class="btn small" data-id="${r.id}">İptal</button></div></div>`).join('');
+  my.innerHTML=rows || '<div class="row">Kayıt yok</div>';
+  my.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>{saveB(B().filter(x=>x.id!==b.dataset.id)); renderMine(); updateStats(); buildSlots();});
+}
+document.getElementById('userLogin').onclick=()=>{
+  const n=document.getElementById('userName').value.trim(), p=document.getElementById('userPass').value.trim();
+  if(!n||!p) return toast('Bilgileri doldurun');
+  let L=U(), u=L.find(x=>x.name==n); if(!u){u={id:'u'+Date.now(),name=n,pass=p}; L.push(u); saveU(L);} else if(u.pass!==p) return toast('Şifre yanlış');
+  localStorage.setItem(KSESS,JSON.stringify({user:u.id,name:u.name})); toast('Giriş başarılı'); renderMine();
+};
+document.getElementById('adminPass').addEventListener('change',()=>{toast(document.getElementById('adminPass').value==='2525'?'Admin OK':'Şifre 2525');});
+
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!localStorage.getItem(KSET)) saveS(defSettings());
+  if(!document.getElementById('date').value) document.getElementById('date').value=todayISO();
+  refreshHome(); updateStats(); loadApptTable(); renderDrawer('dash');
+});
+document.getElementById('goUser').addEventListener('click',()=>{show('user'); renderMine();});
+</script></body></html>
