@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ahmet Tekeli Erkek Kuaförü — Randevu</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef0f3;--ink:#0f172a;--muted:#6b7280;--line:#e5e7eb;--card:#fff;--gold:#d4af37}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+
+/* Layout */
+.wrap{max-width:min(1200px,100%);margin:0 auto;padding:0 12px}
+.bg{position:fixed;inset:0;z-index:-1;background:
+  radial-gradient(900px 400px at 15% -10%,rgba(212,175,55,.08),transparent 55%),
+  radial-gradient(700px 360px at 85% 0,rgba(0,0,0,.05),transparent 60%),
+  linear-gradient(180deg,#f3f5f8 0,var(--bg) 45%,#e7ebf1 100%)}
+
+/* Header */
+header{position:sticky;top:0;background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:10}
+.hero{display:flex;flex-direction:column;align-items:center;gap:8px;padding:42px 0 12px}
+.brand{font-family:"Playfair Display",serif;font-style:italic;font-weight:700;color:#111827;font-size:28px;text-align:center}
+header .wrap{position:relative}
+#topRight{position:absolute;top:10px;right:12px;z-index:5;display:flex;gap:8px}
+.iconBtn{padding:8px 10px;border-radius:999px;border:1px solid var(--line);background:#fff}
+#notifyBell .badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#ef4444;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-left:6px}
+
+/* Sidebar (admin açık, müşteri sade) */
+#sidebar{position:fixed;left:14px;top:86px;bottom:14px;width:240px;background:linear-gradient(180deg,#0b1222 0,#151c2e 100%);border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:14px;color:#e5e7eb;display:none}
+#sidebar nav{display:flex;flex-direction:column;gap:8px}
+#sidebar a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;color:#e5e7eb;text-decoration:none}
+#sidebar a:hover{background:rgba(255,255,255,.06)}
+#sidebar a.active{background:rgba(255,255,255,.12);font-weight:700}
+
+/* Desktop default: sidebar (müşteri) */
+@media(min-width:900px){#sidebar{display:block} main.wrap{margin-left:270px}}
+
+/* Admin: her çözünürlükte açık */
+body.admin #sidebar{display:block}
+body.admin main.wrap{margin-left:270px}
+
+/* Cards & form */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.heroCard{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(8px);box-shadow:0 8px 28px rgba(0,0,0,.18)}
+.layout{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+@media(min-width:900px){.layout{grid-template-columns:1.4fr .8fr}}
+.statsGrid{display:none;grid-template-columns:repeat(2,minmax(140px,1fr));gap:10px}
+body.admin .statsGrid{display:grid} /* sadece admin */
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
+.stat b{font-size:22px;display:block}
+
+.formGrid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px}
+.formGrid .full{grid-column:1/-1}
+
+/* Inputs */
+label{display:block;font-weight:700;margin:.4rem 0 .2rem}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.small{font-size:12px;color:var(--muted)}
+.btn{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.btn-primary{background:var(--gold);border-color:var(--gold);color:#111}
+.slots-wrap{display:flex;align-items:center;gap:8px}
+.slots{display:flex;gap:12px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 2px;max-width:100%}
+.slot{padding:10px 16px;border:1px solid var(--line);border-radius:999px;background:#fff;flex:0 0 auto}
+.slot.dis{opacity:.45;pointer-events:none;text-decoration:line-through}
+.slot.sel{background:#111827;color:#fff;border-color:#111827;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+
+/* Login modal */
+.login{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;width:100%;max-width:920px}
+.auth-tabs{display:flex;gap:8px;margin-bottom:8px}
+.auth-tab{border:1px solid var(--line);background:#f8fafc;padding:8px 10px;border-radius:10px;cursor:pointer}
+.auth-tab.active{background:#111827;color:#fff;border-color:#111827}
+.login .row{display:flex;gap:8px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:12px}
+
+/* Table helpers */
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
+thead th{background:#f3f4f6;font-weight:700}
+
+/* Toast */
+#toast{position:fixed;left:50%;top:-80px;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 16px;border-radius:999px;box-shadow:0 10px 24px rgba(0,0,0,.18);z-index:9999;transition:top .45s ease}
+#toast.show{top:12px}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div id="toast"></div>
+
+<header>
+  <div class="wrap">
+    <div id="topRight">
+      <button id="notifyBell" class="iconBtn" title="Bildirimler">🔔 <span id="notifyCount" class="badge">0</span></button>
+      <button id="openLogin" class="iconBtn">Giriş</button>
+    </div>
+
+    <div class="hero">
+      <div class="brand">Ahmet Tekeli<br>Erkek Kuaförü</div>
+
+      <!-- Tek modal: Müşteri / Kayıt / Admin -->
+      <div class="login" id="loginBox" style="display:none">
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth="login">Müşteri Girişi</button>
+          <button class="auth-tab" data-auth="register">Kayıt Ol</button>
+          <button class="auth-tab" data-auth="admin">Admin Girişi</button>
+        </div>
+
+        <div id="auth-login">
+          <div class="row">
+            <select id="l_cc" style="max-width:140px"><option value="+90" selected>🇹🇷 +90</option><option value="other">🌍 Diğer (+…)</option></select>
+            <input id="l_phone" placeholder="Telefon" inputmode="tel">
+            <input id="l_pin" placeholder="PIN (4 hane)" inputmode="numeric" maxlength="4">
+            <label style="display:flex;align-items:center;gap:8px;margin:.2rem 0 0"><input type="checkbox" id="l_remember" checked style="width:auto"> <span class="muted">Beni hatırla</span></label>
+            <button class="btn btn-primary" id="loginBtn" type="button">Giriş</button>
+            <button class="btn" id="forgotPinBtn" type="button">Şifremi Unuttum?</button>
+          </div>
+          <p class="muted" id="loginInfo" style="margin-top:6px"></p>
+        </div>
+
+        <div id="auth-register" style="display:none">
+          <div class="row">
+            <input id="r_name"  placeholder="Ad Soyad">
+            <select id="r_cc" style="max-width:140px"><option value="+90" selected>🇹🇷 +90</option><option value="other">🌍 Diğer (+…)</option></select>
+            <input id="r_phone" placeholder="Telefon" inputmode="tel">
+            <input id="r_pin"   placeholder="PIN (4 hane)" inputmode="numeric" maxlength="4">
+            <button class="btn btn-primary" id="registerBtn" type="button">Kayıt Ol</button>
+          </div>
+        </div>
+
+        <div id="auth-admin" style="display:none">
+          <div class="row">
+            <input id="adminPassModal" placeholder="Admin şifresi" style="max-width:280px">
+            <button class="btn btn-primary" id="adminLoginModal" type="button">Giriş</button>
+          </div>
+          <p class="muted" id="adminLoginInfo"></p>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside id="sidebar" aria-label="Menü">
+        <nav></nav>
+      </aside>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Ana kart: Logo + Form + (Admin Stats) -->
+  <section id="randevu" class="card heroCard">
+    <div class="layout">
+      <div>
+        <div style="display:flex;justify-content:center;margin-top:-50px;margin-bottom:6px">
+          <img src="logo.png" alt="Logo" style="width:92px;height:92px;border-radius:50%;background:#fff;padding:8px;border:2px solid var(--gold);box-shadow:0 6px 20px rgba(0,0,0,.2)">
+        </div>
+        <div style="text-align:center;margin-bottom:10px">
+          <div style="font-size:32px;font-weight:800;letter-spacing:1px">AHMET TEKELİ</div>
+          <div class="small">ERKEK KUAFÖRÜ</div>
+          <div style="color:#d97706;margin-top:4px">⭐ 4.9 (161)</div>
+        </div>
+
+        <div class="formGrid">
+          <div class="full"><label>Ad Soyad</label><input id="f_name" placeholder="Adınız ve Soyadınız"></div>
+          <div class="full"><label>Telefon</label><input id="f_phone" placeholder="05XXXXXXXXX" inputmode="tel"></div>
+          <div><label>Berber Seçimi</label><select id="staff"></select></div>
+          <div><label>İşlem Seçimi</label><select id="svc"></select></div>
+          <div><label>Tarih</label><input type="date" id="date"></div>
+          <div>
+            <label>Süre (dk)</label>
+            <div class="row">
+              <input id="f_dur" type="number" min="5" step="5" style="max-width:120px">
+              <label class="small" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="f_lock" checked style="width:auto"> Hizmet süresini kullan</label>
+            </div>
+          </div>
+          <div class="full">
+            <label>Uygun Saatler</label>
+            <div class="slots-wrap">
+              <button class="btn" type="button" id="slotPrev">‹</button>
+              <div id="slots" class="slots" aria-label="Uygun saatler"></div>
+              <button class="btn" type="button" id="slotNext">›</button>
+            </div>
+            <p class="small">Genel: <span id="hoursLabel"></span> • Slot: <span id="slotSizeLabel"></span> dk</p>
+          </div>
+          <div class="full"><button class="btn btn-primary" id="makeAppt" style="width:100%;height:54px;font-size:18px">RANDEVU AL</button></div>
+          <div id="makeStatus" class="small full"></div>
+        </div>
+      </div>
+
+      <!-- Admin'e özel istatistikler -->
+      <div>
+        <div id="statsArea" class="statsGrid">
+          <div class="stat"><div class="small">Bugünkü Randevu</div><b id="stat_today_total">0</b></div>
+          <div class="stat"><div class="small">Toplam Tutar</div><b id="stat_today_revenue">0 ₺</b></div>
+          <div class="stat"><div class="small">Onaylı / Bekleyen / İptal</div><b id="stat_today_split">0/0/0</b></div>
+          <div class="stat"><div class="small">Haftalık Toplam</div><b id="stat_week_total">0</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Randevularım -->
+  <section id="randevularim" class="card" style="display:none">
+    <h3>Randevularım</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Tarih</th><th>Saat</th><th>Hizmet</th><th>Berber</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <tbody id="myApptTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Admin Paneli (özet) -->
+  <section id="admin" class="card" style="display:none">
+    <h3>Admin Paneli</h3>
+    <div class="small">Bu alanlar yalnızca admin girişinde kullanılabilir.</div>
+
+    <h4 style="margin-top:12px">Onay Kuyruğu</h4>
+    <div class="table-scroll"><table>
+      <thead><tr><th></th><th>Müşteri</th><th>Tel</th><th>Tarih</th><th>Saat</th><th>Hizmet</th><th>Berber</th><th>Süre</th><th>İşlem</th></tr></thead>
+      <tbody id="queueTbody"></tbody>
+    </table></div>
+
+    <h4 style="margin-top:16px">Günlük Takvim</h4>
+    <div class="row">
+      <input type="date" id="calDate"><select id="calStaff"></select>
+      <button class="btn" id="viewCal" type="button">Görüntüle</button>
+    </div>
+    <div class="table-scroll" style="margin-top:8px"><table>
+      <thead><tr><th></th><th>Saat</th><th>Müşteri</th><th>Hizmet</th><th>Durum</th><th>İşlem</th></tr></thead>
+      <tbody id="calTbody"></tbody>
+    </table></div>
+
+    <details class="card" style="margin-top:16px">
+      <summary><b>🆕 Yeni Randevu (Dışarıdan)</b></summary>
+      <div class="row" style="flex-wrap:wrap;margin-top:8px">
+        <input id="a_name" placeholder="Ad Soyad" style="max-width:220px">
+        <select id="a_cc" style="max-width:140px"><option value="+90" selected>🇹🇷 +90</option><option value="other">🌍 Diğer (+…)</option></select>
+        <input id="a_phone" placeholder="Telefon" inputmode="tel" style="max-width:180px">
+        <select id="a_svc"></select>
+        <select id="a_staff"></select>
+        <input type="date" id="a_date">
+        <label class="small" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="a_override" style="width:auto"> Limiti yok say</label>
+      </div>
+      <div style="margin-top:10px">
+        <label>Uygun Saatler</label>
+        <div class="slots-wrap">
+          <button class="btn" type="button" id="a_prev">‹</button>
+          <div id="a_slots" class="slots"></div>
+          <button class="btn" type="button" id="a_next">›</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-primary" id="a_create" type="button">Randevu Oluştur (Admin)</button>
+        <span id="a_status" class="small"></span>
+      </div>
+    </details>
+  </section>
+</main>
+
+<footer><div class="wrap">© Ahmet Tekeli Erkek Kuaförü • Randevu Sistemi</div></footer>
+
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+<script>
+/* ==== Admin kimliği (sadece bu numara + şifre) ==== */
+const ADMIN_PHONE_E164 = '+905356749243';  // 05356749243
+const ADMIN_PASSWORD   = 'ahmet07';
+
+/* ==== Basit yardımcılar ==== */
+(function(){const mem={};window.store={get(k,d){try{const v=localStorage.getItem(k);if(v!==null)return JSON.parse(v);return mem.hasOwnProperty(k)?mem[k]:d}catch(e){return mem.hasOwnProperty(k)?mem[k]:d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){mem[k]=v}},del(k){try{localStorage.removeItem(k)}catch(e){delete mem[k]}}};})();
+const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
+const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m},toHHMM=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+const todayISO=()=>new Date().toISOString().slice(0,10);const uuid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+function showToast(msg,ms=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms);}
+
+let adminAuthed=false,currentUser=null;
+
+/* ==== Telefon formatı ==== */
+function toE164(raw, ccHint = '+90') {
+  if (!raw) return null;
+  let s = String(raw).trim().replace(/[()\-\s]/g,'');
+  if (s.startsWith('+')) { const digits = s.slice(1).replace(/\D/g,''); return (digits.length>=8 && digits.length<=15) ? `+${digits}` : null; }
+  const only=s.replace(/\D/g,'');
+  if (ccHint === '+90') {
+    if(only.length===11 && only.startsWith('05')) return '+90'+only.slice(1);
+    if(only.length===10 && only.startsWith('5'))  return '+90'+only;
+    return null;
+  }
+  if (ccHint === 'other') return null;
+  return null;
+}
+function isTurkishE164(p){return typeof p==='string' && p.startsWith('+90') && p.length===13}
+function maskPhone(p){ if(!p) return ''; if(p.startsWith('+90') && p.length===13){const n=p.slice(3); return `0${n.slice(0,3)} ${n.slice(3,6)} ${n.slice(6,8)} ${n.slice(8,10)}`} return p }
+
+/* ==== Firebase ==== */
+const firebaseConfig = {
+  apiKey: "AIzaSyBtSQ9_5R42BU5ga0cOt1QETkC5nOf2tW4",
+  authDomain: "randevu-81305.firebaseapp.com",
+  projectId: "randevu-81305",
+  storageBucket: "randevu-81305.firebasestorage.app",
+  messagingSenderId: "686048709577",
+  appId: "1:686048709577:web:b2db4eeae83203ca2e3618",
+  measurementId: "G-3ZX91ND545"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+
+/* ==== Cloud ==== */
+const cloud = {
+  async users_list(){const ss=await db.collection('users').get();return ss.docs.map(d=>({id:d.id,...d.data()}))},
+  async users_upsert(u){const id=u.id||uuid();await db.collection('users').doc(id).set({...u,id});return id},
+  async users_update(id,patch){await db.collection('users').doc(id).set(patch,{merge:true})},
+  async users_delete(id){await db.collection('users').doc(id).delete()},
+  async appts_list(){const ss=await db.collection('appts').get();return ss.docs.map(d=>({id:d.id,...d.data()}))},
+  async appts_add(a){const id=a.id||uuid();await db.collection('appts').doc(id).set({...a,id});return id},
+  async appts_update(id,patch){await db.collection('appts').doc(id).set(patch,{merge:true})},
+  async appts_delete(id){await db.collection('appts').doc(id).delete()},
+  async staff_list(){const ss=await db.collection('staff').get();return ss.docs.map(d=>({id:d.id,...d.data()}))},
+  async staff_upsert(s){const id=s.id||uuid();await db.collection('staff').doc(id).set({...s,id});return id},
+  async staff_update(id,patch){await db.collection('staff').doc(id).set(patch,{merge:true})},
+  async staff_delete(id){await db.collection('staff').doc(id).delete()}
+};
+
+/* ==== Yerel seed ==== */
+(function seed(){
+  if(!store.get('settings')) store.set('settings',{open:"09:00",close:"21:00",slot:30,autoApproveByAdmin:true});
+  if(!store.get('services'))  store.set('services',[]);
+  if(!store.get('users'))     store.set('users',[]);
+  if(!store.get('appts'))     store.set('appts',[]);
+  if(!store.get('resetReqs')) store.set('resetReqs',[]);
+})();
+function refreshSettingsUI(){ const s=store.get('settings'); $('#hoursLabel').textContent=`${s.open} - ${s.close}`; $('#slotSizeLabel').textContent=s.slot; }
+
+/* ==== Sidebar: role bazlı ==== */
+function updateSidebarForRole(){
+  const nav = document.querySelector('#sidebar nav'); if(!nav) return;
+  nav.innerHTML = adminAuthed ? `
+    <a data-target="#admin" class="active"><span>🏠</span> Onay Kuyruğu</a>
+    <a data-target="#admin"><span>📅</span> Günlük Takvim</a>
+    <a data-target="#admin"><span>🆕</span> Yeni Randevu</a>
+    <a data-target="#admin"><span>👥</span> Müşteriler</a>
+    <a data-target="#admin"><span>💈</span> Ustalar</a>
+    <a data-target="#admin"><span>⚙️</span> Hizmetler & Ayarlar</a>
+    <a data-target="#admin"><span>🔑</span> PIN Talepleri</a>
+    <a data-target="#admin"><span>📊</span> Raporlar</a>
+    <a data-target="#randevu"><span>🗓️</span> Randevu Al</a>
+    <a data-target="#randevularim"><span>📋</span> Randevularım</a>
+  ` : `
+    <a data-target="#randevu" class="active"><span>🗓️</span> Randevu Al</a>
+    <a data-target="#randevularim"><span>📋</span> Randevularım</a>
+  `;
+  document.querySelectorAll('#sidebar a').forEach(a=>{
+    a.onclick=(e)=>{
+      e.preventDefault();
+      document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active'));
+      a.classList.add('active');
+      const target=a.getAttribute('data-target');
+      if(target==='#admin'){ document.querySelector('.tab[data-target="#admin"]')?.click(); }
+      else { document.querySelector(`.tab[data-target="${target}"]`)?.click(); }
+      document.querySelector(target)?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  });
+}
+function toggleStatsVisibility(){
+  const stats = document.getElementById('statsArea');
+  if(stats) stats.style.display = adminAuthed ? 'grid' : 'none';
+}
+
+/* ==== Realtime ==== */
+let unsubUsers=null, unsubAppts=null, unsubStaff=null;
+let _prevApptStatusById = {};
+function startRealtime(){
+  if(unsubUsers) unsubUsers();
+  unsubUsers = db.collection('users').onSnapshot(ss=>{
+    store.set('users', ss.docs.map(d=>({id:d.id,...d.data()})));
+    loadMyAppts?.();
+  });
+
+  if(unsubAppts) unsubAppts();
+  unsubAppts = db.collection('appts').onSnapshot(ss=>{
+    store.set('appts', ss.docs.map(d=>({id:d.id,...d.data()})));
+    try{
+      const apptsNow = store.get('appts',[])||[];
+      if(currentUser){
+        apptsNow.filter(a=>a.userId===currentUser.id).forEach(a=>{
+          const before = _prevApptStatusById[a.id];
+          if(before && before==='pending' && a.status==='approved'){
+            showToast('✅ Randevun onaylandı');
+          }
+          _prevApptStatusById[a.id]=a.status;
+        });
+      }
+    }catch(e){}
+    renderQueue?.(); renderCal?.(); loadMyAppts?.(); renderSlots?.(); renderReports?.();
+  });
+
+  if(unsubStaff) unsubStaff();
+  unsubStaff = db.collection('staff').onSnapshot(ss=>{
+    store.set('staffCloud', ss.docs.map(d=>({id:d.id,...d.data()})));
+    renderStaffUI(); renderSlots(); renderAdminNewSlots(); renderCal();
+  });
+}
+
+/* ==== Staff/Services UI ==== */
+function staffAll(){ return store.get('staffCloud',[]) }
+function renderStaffUI(){
+  const staff=staffAll();
+  const opts=staff.length? staff.map(x=>`<option value="${x.id}">${x.name}</option>`).join('') : '<option disabled selected>— Usta yok —</option>';
+  $('#staff').innerHTML=opts; $('#calStaff').innerHTML=`<option value="">Tümü</option>`+ (staff.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''));
+  $('#a_staff').innerHTML=opts;
+}
+function renderSvcUI(){
+  const svcs=store.get('services',[]);
+  if(svcs.length===0){ $('#svc').innerHTML='<option disabled selected>— Önce hizmet ekleyin (Admin) —</option>'; $('#a_svc').innerHTML='<option disabled selected>— Hizmet yok —</option>'; return; }
+  $('#svc').innerHTML=svcs.map(s=>`<option value="${s.id}">${s.name} — ${s.dur} dk / ${s.price} TL</option>`).join('');
+  $('#a_svc').innerHTML=svcs.map(s=>`<option value="${s.id}">${s.name} — ${s.dur} dk</option>`).join('');
+}
+
+/* ==== Saat & slot hesapları ==== */
+function staffWorksThatDay(staff,dateISO){const dow=new Date(dateISO+'T00:00:00').getDay();return (staff.days||[1,2,3,4,5,6]).includes(dow);}
+function isOffDate(staff,dateISO){return (staff.offDates||[]).includes(dateISO)}
+function conflicts(date,staffId){
+  return (store.get('appts',[])||[]).filter(a=>a.date===date&&a.staffId===staffId&&a.status!=='cancelled'&&a.status!=='rejected')
+    .map(a=>({start:toMin(a.time),end:toMin(a.time)+a.duration}));
+}
+function overlaps(aS,aE,bS,bE){return aS<bE && aE>bS}
+function getHoursFor(staff, dateISO){
+  const s = store.get('settings'); const byDay=staff?.hoursByDay;
+  const dow = new Date(dateISO+'T00:00:00').getDay();
+  if(byDay && byDay[dow]?.open && byDay[dow]?.close){ return {open:byDay[dow].open, close:byDay[dow].close}; }
+  if(staff?.hours?.open && staff?.hours?.close){ return {open:staff.hours.open, close:staff.hours.close}; }
+  return { open: s.open, close: s.close };
+}
+function renderSlots(){
+  const s=store.get('settings');$('#hoursLabel').textContent=`${s.open} - ${s.close}`;$('#slotSizeLabel').textContent=s.slot;
+  const staffId=$('#staff')?.value; const svc=(store.get('services',[])||[]).find(x=>x.id===$('#svc')?.value); const date=$('#date')?.value;
+  const box=$('#slots'); if(!box) return; 
+  if(!staffId || !svc || !date){ box.innerHTML=''; return; }
+  const dur = ($('#f_lock')?.checked ? svc.dur : (parseInt($('#f_dur')?.value||'0',10) || svc.dur));
+  const staff=(staffAll().find(x=>x.id===staffId)||{});
+  const {open,close}=getHoursFor(staff,date);
+  const works=staffWorksThatDay(staff,date); const closed=isOffDate(staff,date);
+  const openM=toMin(open), closeM=toMin(close), step=s.slot; const taken=conflicts(date,staffId); box.innerHTML='';
+  for(let t=openM; t+dur<=closeM; t+=step){
+    const disabled = !works || closed || taken.some(x=>overlaps(t,t+dur,x.start,x.end));
+    const b=document.createElement('button'); b.type='button'; b.className='slot'+(disabled?' dis':''); b.textContent=toHHMM(t); b.dataset.time=toHHMM(t);
+    b.onclick=()=>{ if(disabled) return; $$('.slot').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); b.setAttribute('aria-pressed','true'); b.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}); };
+    box.appendChild(b);
+  }
+  const first=box.querySelector('.slot:not(.dis)'); if(first && !box.querySelector('.slot.sel')){ first.classList.add('sel'); first.setAttribute('aria-pressed','true'); }
+}
+['#svc','#staff','#date','#f_dur','#f_lock'].forEach(sel=>document.querySelector(sel)?.addEventListener('change',renderSlots));
+document.addEventListener('click',(e)=>{const c=$('#slots');if(!c) return;if(e.target?.id==='slotPrev') c.scrollBy({left:-220,behavior:'smooth'}); if(e.target?.id==='slotNext') c.scrollBy({left:220,behavior:'smooth'});});
+
+/* ==== Auth ==== */
+function setCurrentUser(u,remember=true){
+  currentUser=u; $('#loginBox').style.display='none';
+  $('#f_name').value = u.name || ''; $('#f_phone').value = (u.phone?.startsWith('+90') ? '0'+u.phone.slice(3) : u.phone)||'';
+  remember?store.set('currentUserId',u.id):store.del('currentUserId'); loadMyAppts();
+  try{ const mine=(store.get('appts',[])||[]).filter(a=>a.userId===currentUser.id); _prevApptStatusById={}; mine.forEach(a=>_prevApptStatusById[a.id]=a.status);}catch(e){}
+}
+function clearCurrentUser(){currentUser=null; store.del('currentUserId');}
+function tryAutoLogin(){if(currentUser) return;const id=store.get('currentUserId',null);if(!id) return;const u=(store.get('users',[])||[]).find(x=>x.id===id);if(u) setCurrentUser(u,true);}
+
+/* Login modal açık/sekme */
+document.getElementById('openLogin')?.addEventListener('click',()=>{$('#loginBox').style.display='block'; window.scrollTo({top:0,behavior:'smooth'});});
+$$('.auth-tab').forEach(b=>b.addEventListener('click',()=>{
+  $$('.auth-tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  $('#auth-login').style.display = (b.dataset.auth==='login')?'block':'none';
+  $('#auth-register').style.display = (b.dataset.auth==='register')?'block':'none';
+  $('#auth-admin').style.display = (b.dataset.auth==='admin')?'block':'none';
+}));
+
+/* Kayıt */
+document.getElementById('registerBtn')?.addEventListener('click', async () => {
+  const name = ($('#r_name').value||'').trim();
+  const ccSel = $('#r_cc').value; const phoneRaw = $('#r_phone').value; const pin  = ($('#r_pin').value||'').trim();
+  const phone = (ccSel==='other') ? toE164(phoneRaw,'other') : toE164(phoneRaw,'+90');
+  if (!name) return alert('Ad gerekli');
+  if (!phone) return alert(ccSel==='other' ? 'Uluslararası + ile başlayın' : '05xx / 5xx / +90 5xx biçimi');
+  if (!/^\d{4}$/.test(pin)) return alert('PIN 4 haneli olmalı');
+  if ((store.get('users',[])||[]).some(x=>x.phone===phone)) return alert('Bu telefon ile kayıt var');
+  const u = { id: uuid(), name, phone, verified: true, pin, createdAt: Date.now() };
+  await cloud.users_upsert(u); try { store.set('users', await cloud.users_list()); } catch {}
+  setCurrentUser(u, true); showToast('✅ Kayıt tamamlandı');
+});
+
+/* Giriş */
+document.getElementById('loginBtn')?.addEventListener('click',async()=>{
+  const ccSel=$('#l_cc').value; const phoneRaw=$('#l_phone').value; const pin=($('#l_pin').value||'').trim();
+  if(!phoneRaw||pin.length!==4){alert('Telefon ve 4 haneli PIN gerekli.');return;}
+  const e164 = (ccSel==='other')? toE164(phoneRaw,'other') : toE164(phoneRaw,'+90');
+  let u = e164 ? (store.get('users',[])||[]).find(x=>x.phone===e164) : null;
+  if(!u){ const digits=String(phoneRaw).replace(/\D/g,''); u=(store.get('users',[])||[]).find(x=>x.phone?.endsWith(digits)); }
+  if(!u || (String(u.pin||'').trim()!==pin)){ alert('Telefon veya PIN hatalı.'); return; }
+  await cloud.users_update(u.id,{lastLogin:Date.now()}); try { store.set('users', await cloud.users_list()); } catch {}
+  setCurrentUser(u,$('#l_remember').checked); showToast('Giriş başarılı');
+});
+document.getElementById('forgotPinBtn')?.addEventListener('click',()=>{
+  const phoneRaw=prompt('Telefon:'); if(!phoneRaw) return;
+  const e164 = phoneRaw.startsWith('+') ? toE164(phoneRaw,'other') : toE164(phoneRaw,'+90');
+  const u = e164 ? (store.get('users',[])||[]).find(x=>x.phone===e164) : null;
+  if(!u){alert('Bu telefonla kayıt yok.');return;}
+  const newPin=prompt('Yeni PIN (4 hane):');if(!newPin||newPin.length!==4){alert('4 haneli PIN giriniz.');return;}
+  const reqs=store.get('resetReqs',[]); reqs.push({id:uuid(),phone:u.phone,newPin,createdAt:Date.now()});
+  store.set('resetReqs',reqs); updateBell(); alert('PIN sıfırlama talebi oluşturuldu.');
+});
+
+/* Admin login (modal) */
+document.getElementById('adminLoginModal')?.addEventListener('click',()=>{
+  if(!currentUser){ $('#adminLoginInfo').textContent='Önce müşteri girişi yapın (telefon + PIN).'; return; }
+  const pass = ($('#adminPassModal').value||'').trim();
+  const okPhone = (currentUser.phone===ADMIN_PHONE_E164);
+  const okPass  = (pass===ADMIN_PASSWORD);
+  if(okPhone && okPass){
+    adminAuthed=true; document.body.classList.add('admin'); updateSidebarForRole(); toggleStatsVisibility(); showToast('✅ Admin girişi başarılı');
+    document.querySelector('.tab[data-target="#admin"]')?.click();
+  } else { $('#adminLoginInfo').textContent = okPhone ? 'Admin şifresi hatalı.' : 'Bu hesap yöneticiye ait değil.'; }
+});
+
+/* ==== Randevu oluşturma ==== */
+document.getElementById('makeAppt')?.addEventListener('click',async()=>{
+  if(!currentUser){$('#makeStatus').textContent='Randevu için önce giriş yapın.';showToast('Önce giriş yapın');return;}
+  const selDate=$('#date').value;
+  const sameDayActive=(store.get('appts',[])||[]).filter(a=>a.phone===currentUser.phone&&a.date===selDate&&(a.status==='pending'||a.status==='approved'));
+  if(sameDayActive.length>=2){$('#makeStatus').textContent='Aynı gün için en fazla 2 aktif randevu alınabilir.';showToast('Aynı gün için 2 randevu limiti');return;}
+
+  const svc=store.get('services',[]).find(x=>x.id===$('#svc').value);
+  const staff=staffAll().find(x=>x.id===$('#staff').value);
+  const timeBtn=document.querySelector('.slot.sel'); if(!timeBtn){$('#makeStatus').textContent='Saat seçiniz.';showToast('Saat seçiniz');return;}
+
+  const time=timeBtn.dataset.time, duration=($('#f_lock')?.checked ? svc.dur : (parseInt($('#f_dur')?.value||'0',10)||svc.dur));
+  const taken=conflicts(selDate,staff.id); const start=toMin(time), end=start+duration;
+  if(!staffWorksThatDay(staff,selDate) || isOffDate(staff,selDate) || taken.some(x=>overlaps(start,end,x.start,x.end))){
+    $('#makeStatus').textContent='Bu saat uygun değil.'; showToast('Bu saat uygun değil'); renderSlots(); return;
+  }
+
+  const newAppt={id:uuid(),userId:currentUser.id,name:currentUser.name,phone:currentUser.phone,serviceId:svc.id,serviceName:svc.name,staffId:staff.id,staffName:staff.name,date:selDate,time,duration,status:'pending',createdAt:Date.now()};
+  await cloud.appts_add(newAppt);
+  $('#makeStatus').textContent='Randevu oluşturuldu (Onay Bekliyor).'; showToast('Randevu oluşturuldu (Onay Bekliyor)');
+});
+
+/* ==== Randevularım ==== */
+function loadMyAppts(){
+  const tb=$('#myApptTbody'); if(!tb||!currentUser) return; tb.innerHTML='';
+  const rows=(store.get('appts',[])||[]).filter(a=>a.userId===currentUser.id).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  rows.forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${a.date}</td><td>${a.time}</td><td>${a.serviceName}</td><td>${a.staffName||''}</td><td>${a.status}</td>
+      <td><button class="btn" onclick="cancelAppt('${a.id}')">İptal</button><button class="btn" onclick="deleteApptUser('${a.id}')">Sil</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+window.cancelAppt=async(id)=>{const a=(store.get('appts',[])||[]).find(x=>x.id===id);if(!a) return; await cloud.appts_update(a.id,{status:'cancelled'})};
+window.deleteApptUser=async(id)=>{const a=(store.get('appts',[])||[]).find(x=>x.id===id); if(!a||!currentUser||a.userId!==currentUser.id){showToast('Bu işlem size ait değil');return;}
+  if(!confirm('Randevuyu tamamen silmek istiyor musunuz?')) return; await cloud.appts_delete(id); showToast('Randevu silindi'); };
+
+/* ==== Admin tabloları ==== */
+function renderQueue(){
+  const tb=$('#queueTbody'); if(!tb) return; tb.innerHTML='';
+  const rows=(store.get('appts',[])||[]).filter(a=>a.status==='pending').sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  rows.forEach(a=>{
+    const tr=document.createElement('tr'); tr.innerHTML=
+      `<td><input type="checkbox" class="chk-appt" data-id="${a.id}"></td>
+       <td>${a.name}</td><td>${maskPhone(a.phone)}</td><td>${a.date}</td><td>${a.time}</td><td>${a.serviceName}</td><td>${a.staffName||''}</td><td>${a.duration} dk</td>
+       <td><button class="btn" onclick="approve('${a.id}')">Onayla</button> <button class="btn" onclick="reject('${a.id}')">Reddet</button> <button class="btn" onclick="adminDelete('${a.id}')">Sil</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+window.approve=async(id)=>{ if(!adminAuthed){showToast('Yalnızca admin');return;} const a=(store.get('appts',[])||[]).find(x=>x.id===id); if(!a) return;
+  const conf=(store.get('appts',[])||[]).some(x=>x.id!==a.id&&x.date===a.date&&x.staffId===a.staffId&&x.status!=='cancelled'&&x.status!=='rejected'&&(toMin(a.time)<toMin(x.time)+x.duration&&toMin(a.time)+a.duration>toMin(x.time)));
+  if(conf){alert('Bu saat çakışıyor.'); return;} await cloud.appts_update(a.id,{status:'approved'}); showToast('Randevu onaylandı'); };
+window.reject=async(id)=>{ if(!adminAuthed){showToast('Yalnızca admin');return;} await cloud.appts_update(id,{status:'rejected'})};
+window.adminDelete=async(id)=>{ if(!adminAuthed){showToast('Yalnızca admin');return;} if(!confirm('Randevu kalıcı silinsin mi?')) return; await cloud.appts_delete(id); showToast('Randevu silindi'); };
+
+document.getElementById('viewCal')?.addEventListener('click',renderCal);
+function renderCal(){
+  const tb=$('#calTbody'); if(!tb) return; tb.innerHTML='';
+  const date=$('#calDate').value||todayISO(); const staffId=$('#calStaff').value;
+  const rows=(store.get('appts',[])||[]).filter(a=>a.date===date&&(!staffId||a.staffId===staffId)&&a.status!=='rejected').sort((a,b)=>a.time.localeCompare(b.time));
+  rows.forEach(a=>{
+    const tr=document.createElement('tr'); tr.innerHTML=
+      `<td><input type="checkbox" class="chk-appt" data-id="${a.id}"></td>
+       <td>${a.time} (${a.duration}')</td><td>${a.name}</td><td>${a.serviceName} / ${a.staffName||''}</td><td>${a.status}</td>
+       <td>${a.status!=='cancelled'?`<button class="btn" onclick="cancelAdmin('${a.id}')">İptal</button>`:''}<button class="btn" onclick="adminDelete('${a.id}')">Sil</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+window.cancelAdmin=async(id)=>{ if(!adminAuthed){showToast('Yalnızca admin');return;} await cloud.appts_update(id,{status:'cancelled'})};
+
+/* ==== Admin: Yeni randevu ==== */
+function adminAvailableTimes(date, staffId, duration){
+  const staff=(staffAll().find(x=>x.id===staffId)||{}); const works=(staff.days||[1,2,3,4,5,6]).includes(new Date(date+'T00:00:00').getDay()); const closed=(staff.offDates||[]).includes(date);
+  const {open,close}=getHoursFor(staff,date); const openM=toMin(open), closeM=toMin(close), step=store.get('settings').slot;
+  if(!works || closed) return [];
+  const taken=conflicts(date,staffId); const list=[]; for(let t=openM; t+duration<=closeM; t+=step){ if(!taken.some(x=>overlaps(t,t+duration,x.start,x.end))) list.push(toHHMM(t)); }
+  return list;
+}
+function renderAdminNewSlots(){
+  const svc=store.get('services',[]).find(x=>x.id===$('#a_svc')?.value); const staffId=$('#a_staff')?.value; const date=$('#a_date')?.value; const box=$('#a_slots'); if(!box) return; if(!svc||!staffId||!date){ box.innerHTML=''; return; }
+  const times=adminAvailableTimes(date, staffId, svc.dur); box.innerHTML=''; times.forEach(t=>{ const b=document.createElement('button'); b.type='button'; b.className='slot'; b.textContent=t; b.dataset.time=t; b.onclick=()=>{ $$('#a_slots .slot').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); }; box.appendChild(b); });
+  const first=box.querySelector('.slot'); if(first) first.classList.add('sel');
+}
+['#a_svc','#a_staff','#a_date'].forEach(sel=>document.querySelector(sel)?.addEventListener('change', renderAdminNewSlots));
+document.addEventListener('click',(e)=>{ if(e.target?.id==='a_prev') $('#a_slots').scrollBy({left:-220,behavior:'smooth'}); if(e.target?.id==='a_next') $('#a_slots').scrollBy({left:220,behavior:'smooth'}); });
+document.getElementById('a_create')?.addEventListener('click', async ()=>{
+  if(!adminAuthed){showToast('Yalnızca admin');return;}
+  const name=($('#a_name').value||'').trim(); const ccSel=$('#a_cc').value; const phoneE164=(ccSel==='other') ? toE164($('#a_phone').value,'other') : toE164($('#a_phone').value,'+90');
+  const svc=store.get('services',[]).find(x=>x.id===$('#a_svc').value); const staff=staffAll().find(x=>x.id===$('#a_staff').value); const date=$('#a_date').value; const timeBtn=$('#a_slots .slot.sel'); const time=timeBtn?.dataset.time; const override=$('#a_override').checked; const statusEl=$('#a_status');
+  if(!name||!phoneE164||!svc||!staff||!date||!time){ statusEl.textContent='Eksik bilgi'; showToast('Eksik bilgi'); return; }
+  if(ccSel!=='other' && !isTurkishE164(phoneE164)){ statusEl.textContent='TR telefon biçimi hatalı'; showToast('Telefon hatalı'); return; }
+  const sameDayActive=(store.get('appts',[])||[]).filter(a=>a.phone===phoneE164&&a.date===date&&(a.status==='pending'||a.status==='approved'));
+  if(!override && sameDayActive.length>=2){ statusEl.textContent='Bu numara için aynı gün en fazla 2 aktif randevu'; showToast('Limit: 2'); return; }
+  const taken=conflicts(date,staff.id), start=toMin(time), end=start+svc.dur; if(taken.some(x=>overlaps(start,end,x.start,x.end))){ statusEl.textContent='Seçilen saat dolu'; showToast('Saat dolu'); renderAdminNewSlots(); return; }
+  let u=(store.get('users',[])||[]).find(x=>x.phone===phoneE164); if(!u){ u={id:uuid(),name,phone:phoneE164,verified:true,pin:'0000',createdAt:Date.now()}; await cloud.users_upsert(u); try{store.set('users',await cloud.users_list())}catch{} }
+  const approveNow = !!store.get('settings').autoApproveByAdmin;
+  await cloud.appts_add({id:uuid(),userId:u.id,name,phone:phoneE164,serviceId:svc.id,serviceName:svc.name,staffId:staff.id,staffName:staff.name,date,time,duration:svc.dur,status:approveNow?'approved':'pending',createdAt:Date.now()});
+  statusEl.textContent= approveNow ? 'Onaylandı ve takvime eklendi' : 'Randevu eklendi (Onay Bekliyor)'; showToast('Admin: randevu eklendi');
+});
+
+/* ==== Rapor kutularını yaz ==== */
+function renderReports(){
+  const appts = store.get('appts',[])||[];
+  const today = todayISO();
+  const todayList = appts.filter(a=>a.date===today);
+  const pending = todayList.filter(a=>a.status==='pending').length;
+  const approved= todayList.filter(a=>a.status==='approved').length;
+  const cancelled= todayList.filter(a=>a.status==='cancelled').length;
+  const weekAgo = new Date(Date.now()-7*24*60*60*1000).toISOString().slice(0,10);
+  const weekList = appts.filter(a=>a.date>=weekAgo);
+  const totalRevenue = appts.reduce((sum,a)=>{ const svc=(store.get('services',[])||[]).find(s=>s.id===a.serviceId); return sum + (svc?Number(svc.price||0):0); },0);
+  const fmt=n=>new Intl.NumberFormat('tr-TR').format(n);
+  $('#stat_today_total').textContent = fmt(todayList.length);
+  $('#stat_today_revenue').textContent = fmt(totalRevenue) + ' ₺';
+  $('#stat_today_split').textContent = `${fmt(approved)}/${fmt(pending)}/${fmt(cancelled)}`;
+  $('#stat_week_total').textContent = fmt(weekList.length);
+}
+
+/* ==== Çan ==== */
+function getPendingCount(){try{return (store.get('appts',[])||[]).filter(a=>a.status==='pending').length+(store.get('resetReqs',[])||[]).length}catch(e){return 0}}
+function updateBell(){$('#notifyCount').textContent=String(getPendingCount());}
+
+/* ==== Sayfa başlat ==== */
+document.addEventListener('DOMContentLoaded',()=>{
+  refreshSettingsUI(); renderSvcUI(); renderStaffUI();
+  $('#date').value=todayISO(); $('#calDate').value=todayISO(); $('#a_date').value=todayISO();
+  startRealtime(); tryAutoLogin(); updateSidebarForRole(); toggleStatsVisibility();
+  // Süre kilidi başlangıç değeri
+  (function initDur(){ const svc=(store.get('services',[])||[])[0]; if(svc){ $('#f_dur').value=svc.dur; }})();
+});
+
+/* ==== Sekmeler (üst gizli) – admin/randevu geçişi için minimal ==== */
+document.addEventListener('click',(e)=>{
+  const t=e.target.closest('.tab'); if(!t) return;
+  $$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  $$('main section').forEach(s=>s.style.display='none'); $(t.dataset.target).style.display='block';
+});
+</script>
+</body>
+</html>
