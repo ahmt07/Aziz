@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ahmet Tekeli — Randevu Sistemi</title>
+<style>
+:root{--bg:#eef0f3;--card:#fff;--ink:#0f172a;--muted:#6b7280;--line:#e5e7eb;--gold:#d4af37}
+*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.container{max-width:1200px;margin:16px auto;padding:12px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-family:"Playfair Display",serif;font-weight:700;font-size:28px;text-align:center;line-height:1.1}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:10px;cursor:pointer}
+.btn-primary{background:var(--gold);border-color:var(--gold);color:#111}
+.badge{background:#ef4444;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700;font-size:12px}
+.layout{display:flex;gap:16px;margin-top:12px}
+#sidebar{width:260px;background:#111827;color:#fff;border-radius:12px;padding:16px;flex:0 0 260px}
+#sidebar nav a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;margin-bottom:6px}
+#sidebar nav a.active{background:rgba(255,255,255,.06)}
+.main{flex:1;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.form-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+label{display:block;font-weight:700;margin-bottom:6px}
+input,select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:15px}
+.small{font-size:13px;color:var(--muted)}
+.slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.slot{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.slot.sel{background:#111827;color:#fff;border-color:#111827}
+.table-scroll{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.footer{color:var(--muted);text-align:center;padding:18px 0;font-size:13px}
+.badge-soft{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:#f3f4f6;border:1px solid var(--line);border-radius:999px;padding:4px 8px}
+
+/* MOBILE */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  #sidebar{display:none;position:fixed;left:12px;top:70px;z-index:30}
+  body.showSidebar #sidebar{display:block}
+  .form-row{grid-template-columns:1fr}
+  input,select{font-size:16px}
+}
+
+/* ADMIN görünümü: istatistikleri yalnız admin görür */
+#statsArea{display:none}
+body.admin #statsArea{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+
+/* === Mobil sheet (tam ekran panel) === */
+#paneSheet{position:fixed;inset:0;z-index:9999;display:none;background:#fff}
+#paneSheet.show{display:block}
+#paneSheet .head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff}
+#paneSheet .head h3{margin:0;font-size:16px}
+#paneSheet .body{padding:12px;max-width:1100px;margin:0 auto}
+#paneBack{border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <div class="brand">AHMET TEKELİ<br><span class="small">Erkek Kuaförü</span></div>
+    <div class="controls">
+      <button id="bellBtn" class="btn" title="Bildirimler">🔔 <span id="bellCount" class="badge">0</span></button>
+      <button id="adminBtn" class="btn">Admin Girişi</button>
+      <button id="userBtn" class="btn">Müşteri Girişi</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar (admin only) -->
+    <aside id="sidebar" class="card">
+      <nav id="sideNav">
+        <!-- JS dolduracak -->
+      </nav>
+    </aside>
+
+    <main class="main">
+      <!-- Üst kart + istatistikler (yalnız admin) -->
+      <section id="topCard" class="card" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <div style="width:96px;height:96px;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center;border:6px solid #fff;box-shadow:0 8px 30px rgba(0,0,0,.12)">
+          <img id="logoImg" alt="logo" style="width:72px;height:72px;border-radius:999px;display:block" />
+        </div>
+        <div style="flex:1;min-width:220px">
+          <h2 style="margin:0">AHMET TEKELİ</h2>
+          <div class="small">Erkek Kuaförü • <span id="rating">⭐ 4.9 (161)</span></div>
+        </div>
+        <div id="statsArea"></div>
+      </section>
+
+      <!-- Ana form -->
+      <section class="card">
+        <form id="apptForm">
+          <div class="form-row">
+            <div>
+              <label>Ad Soyad</label>
+              <input id="f_name" placeholder="Adınız ve Soyadınız" autocomplete="name">
+            </div>
+            <div>
+              <label>Telefon</label>
+              <input id="f_phone" placeholder="05xxxxxxxxx" inputmode="tel" autocomplete="tel">
+            </div>
+
+            <div>
+              <label>Berber Seçimi</label>
+              <select id="f_staff"></select>
+            </div>
+            <div>
+              <label>Hizmet Seçimi</label>
+              <select id="f_service"></select>
+            </div>
+
+            <div>
+              <label>Tarih</label>
+              <input id="f_date" type="date">
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Uygun Saatler</div>
+            <div id="slots" class="slots"></div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:14px;align-items:center;flex-wrap:wrap">
+            <button id="bookBtn" class="btn btn-primary" type="button">RANDEVU AL</button>
+            <button id="forgotPin" class="btn" type="button">Şifremi Unuttum</button>
+            <div id="formMsg" class="small"></div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Randevularım -->
+      <section id="myAppts" class="card">
+        <h3>Randevularım</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Tarih</th><th>Saat</th><th>Hizmet</th><th>Berber</th><th>Durum</th><th>İşlem</th></tr></thead>
+            <tbody id="myApptTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="footer">© Ahmet Tekeli Erkek Kuaförü • Randevu Sistemi</div>
+    </main>
+  </div>
+</div>
+
+<!-- Admin modal -->
+<div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:60;align-items:center;justify-content:center">
+  <div style="width:92%;max-width:1100px;background:#fff;border-radius:12px;padding:16px;position:relative;max-height:90vh;overflow:auto">
+    <button id="closeAdminModal" style="position:absolute;right:12px;top:12px" class="btn">Kapat</button>
+    <h3>Yönetici Paneli</h3>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div><label>Admin Telefon</label><input id="admin_phone" placeholder="+9053..." value="+905356749243"></div>
+      <div><label>Admin Şifre</label><input id="admin_pass" placeholder="şifre" value="ahmet07" type="password"></div>
+      <div style="align-self:end">
+        <button id="doAdminLogin" class="btn btn-primary">Giriş Yap</button>
+        <button id="doAdminLogout" class="btn">Çıkış</button>
+      </div>
+      <div style="align-self:center;margin-left:auto">
+        <label><input id="opt_autoApprove" type="checkbox"> Admin eklediğinde otomatik onayla</label>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <aside style="width:220px">
+        <nav id="adminNav">
+          <a data-target="#pane_queue" class="active">🏠 Onay Kuyruğu</a>
+          <a data-target="#pane_calendar">📅 Günlük Takvim</a>
+          <a data-target="#pane_staff">💈 Ustalar</a>
+          <a data-target="#pane_services">🧰 Hizmetler</a>
+          <a data-target="#pane_pin">🔑 PIN Talepleri</a>
+          <a data-target="#pane_reports">📊 Raporlar</a>
+        </nav>
+      </aside>
+      <section style="flex:1">
+        <!-- Paneller -->
+        <div id="pane_queue" class="adminPane">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h4>Onay Kuyruğu</h4>
+            <button id="openAdminCreate" class="btn">+ Yeni Randevu (Admin)</button>
+          </div>
+          <div class="table-scroll" style="max-height:320px">
+            <table><thead><tr><th></th><th>Ad</th><th>Tel</th><th>Tarih</th><th>Saat</th><th>Hizmet</th><th>Berber</th><th>Durum</th><th>İşlem</th></tr></thead>
+            <tbody id="queueTbody"></tbody></table>
+          </div>
+
+          <!-- Admin yeni randevu formu -->
+          <details id="adminCreateBox" class="card" style="margin-top:10px">
+            <summary><b>Yeni Randevu (Admin)</b> — limit yok</summary>
+            <div class="form-row">
+              <div><label>Ad Soyad</label><input id="a_name"></div>
+              <div><label>Telefon</label><input id="a_phone" placeholder="05xxxxxxxxx"></div>
+              <div><label>Hizmet</label><select id="a_service"></select></div>
+              <div><label>Berber</label><select id="a_staff"></select></div>
+              <div><label>Tarih</label><input id="a_date" type="date"></div>
+              <div><label>Oto Onay</label><label class="small"><input id="a_auto" type="checkbox"> Direkt onayla</label></div>
+            </div>
+            <div style="margin-top:10px">
+              <div class="small">Uygun Saatler</div>
+              <div id="a_slots" class="slots"></div>
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+              <button id="a_create" class="btn btn-primary" type="button">Oluştur</button>
+              <span id="a_status" class="small"></span>
+            </div>
+          </details>
+        </div>
+
+        <div id="pane_calendar" class="adminPane" style="display:none">
+          <h4>Günlük Takvim</h4>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="calDate">
+            <select id="calStaff"><option value="">Tümü</option></select>
+            <button id="viewCal" class="btn">Görüntüle</button>
+          </div>
+          <div class="table-scroll" style="margin-top:8px;max-height:320px">
+            <table><thead><tr><th></th><th>Saat</th><th>Müşteri</th><th>Hizmet</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="calTbody"></tbody></table>
+          </div>
+        </div>
+
+        <div id="pane_staff" class="adminPane" style="display:none">
+          <h4>Ustalar</h4>
+          <!-- Ekle: ad + çalışma saatleri + günler -->
+          <div class="card" style="margin-bottom:10px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <input id="st_name" placeholder="Usta adı" style="max-width:240px">
+              <label class="small">Çalışma:
+                <input id="st_open" type="time" value="09:00" style="max-width:120px"> –
+                <input id="st_close" type="time" value="21:00" style="max-width:120px">
+              </label>
+              <div id="st_days_add" class="small" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+              <button id="st_add" class="btn btn-primary" type="button">Ekle</button>
+            </div>
+            <p class="small" style="margin:6px 0 0">Gün seçmezsen varsayılan: Pzt–Cmt çalışır.</p>
+          </div>
+
+          <!-- Liste -->
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ad</th>
+                  <th>Çalışma Saatleri</th>
+                  <th>Günler</th>
+                  <th>Kapalı Gün</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="st_tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="pane_services" class="adminPane" style="display:none">
+          <h4>Hizmetler</h4>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <input id="sv_name" placeholder="Hizmet adı">
+            <input id="sv_dur" type="number" placeholder="Süre (dk)">
+            <input id="sv_price" type="number" placeholder="Fiyat (TL)">
+            <button id="sv_add" class="btn btn-primary">Ekle</button>
+          </div>
+          <div class="table-scroll" style="max-height:320px">
+            <table>
+              <thead><tr><th>Ad</th><th>Süre</th><th>Fiyat</th><th>İşlem</th></tr></thead>
+              <tbody id="sv_tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="pane_pin" class="adminPane" style="display:none">
+          <h4>PIN Talepleri</h4>
+          <div class="table-scroll" style="max-height:320px">
+            <table><thead><tr><th>Tel</th><th>Yeni PIN</th><th>Zaman</th><th>İşlem</th></tr></thead><tbody id="pinTbody"></tbody></table>
+          </div>
+        </div>
+
+        <div id="pane_reports" class="adminPane" style="display:none">
+          <h4>Raporlar</h4>
+          <div class="grid-cards" id="reportCards"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Mobil tek-panel sheet -->
+<div id="paneSheet" aria-hidden="true">
+  <div class="head">
+    <button id="paneBack" type="button">← Geri</button>
+    <h3 id="paneTitle"></h3>
+  </div>
+  <div class="body" id="paneBody"></div>
+</div>
+
+<script>
+/* ========= Basit store ========= */
+(function(){
+  const mem={};
+  window.store={
+    get(k,d){try{const v=localStorage.getItem(k);if(v!==null)return JSON.parse(v);return mem.hasOwnProperty(k)?mem[k]:d}catch(e){return mem.hasOwnProperty(k)?mem[k]:d}},
+    set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){mem[k]=v}},
+    del(k){try{localStorage.removeItem(k)}catch(e){delete mem[k]}}
+  };
+})();
+
+/* ========= Varsayılan seed ========= */
+if(!store.get('settings')) store.set('settings',{open:"09:00",close:"21:00",slot:30,adminAutoApprove:true});
+if(!store.get('services')) store.set('services',[
+  {id:'s1',name:'Saç Kesimi',dur:30,price:150},
+  {id:'s2',name:'Sakal Tıraşı',dur:20,price:100},
+  {id:'s3',name:'Saç + Sakal',dur:45,price:220}
+]);
+if(!store.get('staff')) store.set('staff',[
+  {id:'st1',name:'Efe KARA',days:[1,2,3,4,5,6],hours:{open:'09:00',close:'21:00'},offDates:[]},
+  {id:'st2',name:'Ozan YILMAZ',days:[1,2,3,4,5,6],hours:{open:'09:00',close:'21:00'},offDates:[]}
+]);
+if(!store.get('users')) store.set('users',[]);
+if(!store.get('appts')) store.set('appts',[]);
+if(!store.get('pinReqs')) store.set('pinReqs',[]);
+
+/* ========= Sabitler ========= */
+const ADMIN_PHONE_E164 = '+905356749243';
+const ADMIN_PASSWORD   = 'ahmet07';
+const LS_USER_SESSION  = 'userSession';
+const LS_ADMIN_SESSION = 'adminSession';
+
+/* ========= Yardımcılar ========= */
+const uuid = ()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+const todayISO = ()=>new Date().toISOString().slice(0,10);
+const pad2 = n=>String(n).padStart(2,'0');
+const toMin = t=>{const [h,m]=t.split(':').map(Number);return h*60+m};
+const toHHMM = m=>`${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
+function phoneNormalize(raw){
+  if(!raw) return '';
+  const only = String(raw).replace(/\D/g,'');
+  if(only.length===10 && only.startsWith('5')) return '+90'+only;
+  if(only.length===11 && only.startsWith('90')) return '+'+only;
+  if(raw.startsWith('+')) return raw;
+  return '+90'+only;
+}
+const DAY_LABELS=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+
+/* ========= Header & nav ========= */
+const bellCountEl = document.getElementById('bellCount');
+function updateBell(){
+  const pending=(store.get('appts',[])||[]).filter(a=>a.status==='pending').length;
+  const pin=(store.get('pinReqs',[])||[]).length;
+  bellCountEl.textContent=String(pending+pin);
+}
+document.getElementById('adminBtn').addEventListener('click',()=>{document.getElementById('adminModal').style.display='flex';});
+document.getElementById('closeAdminModal').addEventListener('click',()=>{document.getElementById('adminModal').style.display='none';});
+document.getElementById('userBtn').addEventListener('click',()=>{
+  window.scrollTo({top:document.getElementById('apptForm').offsetTop-16,behavior:'smooth'});
+});
+
+/* ========= Admin login kalıcı ========= */
+let adminAuthed = store.get(LS_ADMIN_SESSION)===true;
+function setAdminUI(on){
+  adminAuthed=!!on;
+  if(on){
+    document.body.classList.add('admin');
+    renderSideNav();
+    renderReports();
+    renderQueue();
+    renderCalendar();
+    renderStaffManager();
+    renderServiceManager();
+  }else{
+    document.body.classList.remove('admin');
+    document.getElementById('sideNav').innerHTML='';
+  }
+  updateBell();
+}
+document.getElementById('doAdminLogin').addEventListener('click',()=>{
+  const ph=(document.getElementById('admin_phone').value||'').trim();
+  const pw=(document.getElementById('admin_pass').value||'').trim();
+  if(ph!==ADMIN_PHONE_E164){alert('Bu hesap yöneticiye ait değil.');return;}
+  if(pw!==ADMIN_PASSWORD){alert('Admin şifresi hatalı.');return;}
+  store.set(LS_ADMIN_SESSION,true);
+  document.getElementById('adminModal').style.display='none';
+  setAdminUI(true);
+  alert('Admin girişi başarılı');
+});
+document.getElementById('doAdminLogout').addEventListener('click',()=>{
+  store.del(LS_ADMIN_SESSION);
+  setAdminUI(false);
+  alert('Admin çıkış yapıldı');
+});
+document.getElementById('opt_autoApprove').checked = !!store.get('settings').adminAutoApprove;
+document.getElementById('opt_autoApprove').addEventListener('change',(e)=>{
+  const s=store.get('settings'); s.adminAutoApprove=!!e.target.checked; store.set('settings',s);
+});
+
+/* ========= Sidebar ========= */
+function renderSideNav(){
+  const nav=document.getElementById('sideNav');
+  nav.innerHTML = `
+    <a data-target="#pane_queue" class="active">🏠 Onay Kuyruğu</a>
+    <a data-target="#pane_calendar">📅 Günlük Takvim</a>
+    <a data-target="#pane_staff">💈 Ustalar</a>
+    <a data-target="#pane_services">🧰 Hizmetler</a>
+    <a data-target="#pane_pin">🔑 PIN Talepleri</a>
+    <a data-target="#pane_reports">📊 Raporlar</a>
+  `;
+  nav.querySelectorAll('a').forEach(a=>{
+    a.addEventListener('click',(e)=>{
+      e.preventDefault();
+      openAdminPane(a.dataset.target);
+    });
+  });
+}
+function openAdminPane(selector){
+  const pane=document.querySelector(selector); if(!pane) return;
+  // aktif class
+  document.querySelectorAll('#sideNav a').forEach(x=>x.classList.toggle('active',x.dataset.target===selector));
+  const isMobile=window.matchMedia('(max-width:900px)').matches;
+  if(isMobile){
+    const sheet=document.getElementById('paneSheet');
+    const body=document.getElementById('paneBody'); const title=document.getElementById('paneTitle');
+    const h=pane.querySelector('h3,h4'); title.textContent=h?h.textContent:pane.id;
+    body.innerHTML=''; const clone=pane.cloneNode(true); clone.id=''; clone.style.display='block'; body.appendChild(clone);
+    sheet.classList.add('show'); sheet.setAttribute('aria-hidden','false');
+    history.pushState({pane:selector},'',location.href+'#'+selector.replace('#',''));
+  }else{
+    document.querySelectorAll('.adminPane').forEach(p=>p.style.display='none');
+    pane.style.display='block';
+  }
+}
+document.getElementById('paneBack').addEventListener('click',closeSheet);
+window.addEventListener('popstate',()=>{const sheet=document.getElementById('paneSheet'); if(sheet.classList.contains('show')) closeSheet();});
+function closeSheet(){
+  const sheet=document.getElementById('paneSheet');
+  sheet.classList.remove('show'); sheet.setAttribute('aria-hidden','true');
+  if(location.hash) history.replaceState(null,'',location.pathname+location.search);
+}
+
+/* ========= Seçim listeleri ========= */
+function renderSelects(){
+  const services=(store.get('services',[])||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  const staff=(store.get('staff',[])||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  document.getElementById('f_service').innerHTML='<option value="">— Hizmet seç —</option>'+services.map(s=>`<option value="${s.id}">${s.name} — ${s.dur} dk / ${s.price} TL</option>`).join('');
+  document.getElementById('f_staff').innerHTML='<option value="">— Berber seç —</option>'+staff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('a_service').innerHTML=document.getElementById('f_service').innerHTML;
+  document.getElementById('a_staff').innerHTML=document.getElementById('f_staff').innerHTML;
+}
+
+/* ========= Slot üretimi ========= */
+function staffWorksThatDay(staff,dateISO){const dow=new Date(dateISO+'T00:00:00').getDay();return (staff.days||[1,2,3,4,5,6]).includes(dow);}
+function isOffDate(staff,dateISO){return (staff.offDates||[]).includes(dateISO)}
+function conflicts(date,staffId){
+  return (store.get('appts',[])||[]).filter(a=>a.date===date&&a.staffId===staffId&&a.status!=='cancelled'&&a.status!=='rejected')
+    .map(a=>({start:toMin(a.time),end:toMin(a.time)+a.duration}));
+}
+function overlaps(aS,aE,bS,bE){return aS<bE && aE>bS}
+function getHoursFor(staff,dateISO){
+  const s=store.get('settings');
+  if(staff?.hours?.open&&staff?.hours?.close) return {open:staff.hours.open,close:staff.hours.close};
+  return {open:s.open,close:s.close};
+}
+function renderSlots(){
+  const box=document.getElementById('slots'); box.innerHTML='';
+  const svc=(store.get('services',[])||[]).find(x=>x.id===document.getElementById('f_service').value);
+  const staff=(store.get('staff',[])||[]).find(x=>x.id===document.getElementById('f_staff').value);
+  const date=document.getElementById('f_date').value;
+  if(!svc||!staff||!date) return;
+  const {open,close}=getHoursFor(staff,date);
+  const works=staffWorksThatDay(staff,date); const closed=isOffDate(staff,date);
+  const openM=toMin(open), closeM=toMin(close), step=store.get('settings').slot||30;
+  const dur=svc.dur; // ANA MENÜDE SÜRE GÖSTERİLMİYOR; HESAPTA HİZMET SÜRESİ KULLANILIYOR
+  const taken=conflicts(date,staff.id);
+  for(let t=openM;t+dur<=closeM;t+=step){
+    const disabled= !works || closed || taken.some(x=>overlaps(t,t+dur,x.start,x.end));
+    const b=document.createElement('button');
+    b.type='button'; b.className='slot'+(disabled?' dis':''); b.textContent=toHHMM(t); b.dataset.time=toHHMM(t);
+    b.disabled=disabled;
+    b.addEventListener('click',()=>{ if(disabled) return; document.querySelectorAll('.slot').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); });
+    box.appendChild(b);
+  }
+}
+
+/* ========= Müşteri oturumu (kalıcı) ========= */
+function setCurrentUserSession(u){
+  const sess={id:u.id||uuid(),name:u.name,phone:u.phone,ts:Date.now()};
+  store.set(LS_USER_SESSION,sess);
+  document.getElementById('userBtn').textContent=`${u.name} (Hesap)`;
+  document.getElementById('f_name').value=u.name||'';
+  document.getElementById('f_phone').value=(u.phone||'').replace('+90','0');
+  loadMyAppts();
+}
+function clearUserSession(){
+  store.del(LS_USER_SESSION);
+  document.getElementById('userBtn').textContent='Müşteri Girişi';
+}
+function countActiveForPhoneOnDate(phone,date){
+  const appts=store.get('appts')||[];
+  return appts.filter(a=>a.phone===phone && a.date===date && (a.status==='pending'||a.status==='approved')).length;
+}
+
+/* ========= Randevu Alma ========= */
+document.getElementById('f_staff').addEventListener('change',renderSlots);
+document.getElementById('f_service').addEventListener('change',renderSlots);
+document.getElementById('f_date').addEventListener('change',renderSlots);
+
+document.getElementById('bookBtn').addEventListener('click',()=>{
+  const name=(document.getElementById('f_name').value||'').trim();
+  const phoneRaw=(document.getElementById('f_phone').value||'').trim();
+  const svc=(store.get('services',[])||[]).find(x=>x.id===document.getElementById('f_service').value);
+  const staff=(store.get('staff',[])||[]).find(x=>x.id===document.getElementById('f_staff').value);
+  const date=document.getElementById('f_date').value;
+  const timeBtn=document.querySelector('#slots .slot.sel');
+  const msg=document.getElementById('formMsg');
+  if(!name||!phoneRaw||!svc||!staff||!date||!timeBtn){msg.textContent='Eksik bilgi';return;}
+  const phone=phoneNormalize(phoneRaw);
+  // limit: aynı gün max 2 aktif
+  if(countActiveForPhoneOnDate(phone,date)>=2){msg.textContent='Aynı gün için en fazla 2 aktif randevu alabilirsiniz.';return;}
+  const time=timeBtn.dataset.time, duration=svc.dur;
+  // çakışma kontrol
+  const taken=conflicts(date,staff.id); const start=toMin(time), end=start+duration;
+  if(taken.some(x=>overlaps(start,end,x.start,x.end)) || !staffWorksThatDay(staff,date) || isOffDate(staff,date)){msg.textContent='Seçilen saat uygun değil'; renderSlots(); return;}
+  const appts=store.get('appts',[])||[];
+  appts.push({id:uuid(),userId:phone,name,phone,serviceId:svc.id,serviceName:svc.name,staffId:staff.id,staffName:staff.name,date,time,duration,status:'pending',createdAt:Date.now()});
+  store.set('appts',appts);
+  setCurrentUserSession({name,phone});
+  msg.textContent='Randevu oluşturuldu (Onay Bekliyor)';
+  renderQueue(); renderCalendar(); loadMyAppts(); updateBell();
+});
+
+/* Şifremi Unuttum: talep oluştur */
+document.getElementById('forgotPin').addEventListener('click',()=>{
+  const phoneRaw=prompt('Telefon (05xxxxxxxxx):'); if(!phoneRaw) return;
+  const newPin=prompt('Yeni PIN (4 hane):'); if(!newPin||!/^\d{4}$/.test(newPin)) return alert('4 haneli PIN giriniz');
+  const list=store.get('pinReqs',[])||[]; list.push({id:uuid(),phone:phoneNormalize(phoneRaw),newPin,createdAt:Date.now()}); store.set('pinReqs',list);
+  updateBell(); alert('PIN sıfırlama talebi alındı.');
+});
+
+/* ========= Randevularım ========= */
+function loadMyAppts(){
+  const sess=store.get(LS_USER_SESSION); const tb=document.getElementById('myApptTbody'); if(!tb) return;
+  tb.innerHTML='';
+  const rows=(store.get('appts',[])||[]).filter(a=>sess && a.userId===sess.id || (sess && a.phone===sess.phone))
+    .sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  rows.forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${a.date}</td><td>${a.time}</td><td>${a.serviceName}</td><td>${a.staffName||''}</td><td>${a.status}</td>
+      <td>
+        <button class="btn" onclick="userCancel('${a.id}')">İptal</button>
+        <button class="btn" onclick="userDelete('${a.id}')">Sil</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+window.userCancel=(id)=>{const list=store.get('appts',[])||[];const i=list.findIndex(x=>x.id===id); if(i<0) return; list[i].status='cancelled'; store.set('appts',list); loadMyAppts(); renderQueue(); renderCalendar(); updateBell(); }
+window.userDelete=(id)=>{if(!confirm('Randevu silinsin mi?')) return; store.set('appts',(store.get('appts',[])||[]).filter(x=>x.id!==id)); loadMyAppts(); renderQueue(); renderCalendar(); updateBell(); }
+
+/* ========= Admin: Kuyruk ========= */
+function statusTR(s){return s==='pending'?'Onay Bekliyor':s==='approved'?'Onaylandı':s==='cancelled'?'İptal Edildi':s==='rejected'?'Reddedildi':s}
+function renderQueue(){
+  if(!adminAuthed) return;
+  const tb=document.getElementById('queueTbody'); tb.innerHTML='';
+  const rows=(store.get('appts',[])||[]).filter(a=>a.status==='pending').sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  rows.forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input type="checkbox" data-id="${a.id}"></td>
+      <td>${a.name}</td><td>${a.phone}</td><td>${a.date}</td><td>${a.time}</td><td>${a.serviceName}</td><td>${a.staffName||''}</td><td>${statusTR(a.status)}</td>
+      <td>
+        <button class="btn" onclick="approve('${a.id}')">Onayla</button>
+        <button class="btn" onclick="reject('${a.id}')">Reddet</button>
+        <button class="btn" onclick="adminDelete('${a.id}')">Sil</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+window.approve=(id)=>{const list=store.get('appts',[])||[];const i=list.findIndex(x=>x.id===id); if(i<0) return;
+  // çakışma koruması
+  const a=list[i]; const conf=list.some(x=>x.id!==a.id && x.date===a.date && x.staffId===a.staffId && x.status!=='cancelled'&&x.status!=='rejected' && (toMin(a.time)<toMin(x.time)+x.duration && toMin(a.time)+a.duration>toMin(x.time)));
+  if(conf){alert('Bu saat çakışıyor'); return;}
+  list[i].status='approved'; store.set('appts',list); renderQueue(); renderCalendar(); updateBell();
+}
+window.reject=(id)=>{const list=store.get('appts',[])||[];const i=list.findIndex(x=>x.id===id); if(i<0) return; list[i].status='rejected'; store.set('appts',list); renderQueue(); updateBell();}
+window.adminDelete=(id)=>{if(!confirm('Randevu silinsin mi?')) return; store.set('appts',(store.get('appts',[])||[]).filter(x=>x.id!==id)); renderQueue(); renderCalendar(); updateBell();}
+
+/* ========= Admin: Yeni randevu (limit yok) ========= */
+document.getElementById('openAdminCreate').addEventListener('click',()=>{document.getElementById('adminCreateBox').open=true;});
+document.getElementById('a_date').value=todayISO();
+['a_service','a_staff','a_date'].forEach(id=>document.getElementById(id).addEventListener('change',renderAdminSlots));
+function renderAdminSlots(){
+  const svc=(store.get('services',[])||[]).find(x=>x.id===document.getElementById('a_service').value);
+  const staff=(store.get('staff',[])||[]).find(x=>x.id===document.getElementById('a_staff').value);
+  const date=document.getElementById('a_date').value;
+  const box=document.getElementById('a_slots'); box.innerHTML='';
+  if(!svc||!staff||!date) return;
+  const {open,close}=getHoursFor(staff,date);
+  const openM=toMin(open), closeM=toMin(close), step=store.get('settings').slot||30, dur=svc.dur;
+  const taken=conflicts(date,staff.id);
+  for(let t=openM;t+dur<=closeM;t+=step){
+    const disabled=taken.some(x=>overlaps(t,t+dur,x.start,x.end)) || !staffWorksThatDay(staff,date) || isOffDate(staff,date);
+    if(disabled) continue;
+    const b=document.createElement('button'); b.type='button'; b.className='slot'; b.textContent=toHHMM(t); b.dataset.time=toHHMM(t);
+    b.onclick=()=>{document.querySelectorAll('#a_slots .slot').forEach(x=>x.classList.remove('sel')); b.classList.add('sel');};
+    box.appendChild(b);
+  }
+}
+document.getElementById('a_create').addEventListener('click',()=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  const name=(document.getElementById('a_name').value||'').trim();
+  const phone=phoneNormalize((document.getElementById('a_phone').value||'').trim());
+  const svc=(store.get('services',[])||[]).find(x=>x.id===document.getElementById('a_service').value);
+  const staff=(store.get('staff',[])||[]).find(x=>x.id===document.getElementById('a_staff').value);
+  const date=document.getElementById('a_date').value;
+  const timeBtn=document.querySelector('#a_slots .slot.sel');
+  const auto=document.getElementById('a_auto').checked || store.get('settings').adminAutoApprove;
+  const st=document.getElementById('a_status');
+  if(!name||!phone||!svc||!staff||!date||!timeBtn){st.textContent='Eksik bilgi';return;}
+  const time=timeBtn.dataset.time; const duration=svc.dur;
+  const appts=store.get('appts',[])||[];
+  appts.push({id:uuid(),userId:phone,name,phone,serviceId:svc.id,serviceName:svc.name,staffId:staff.id,staffName:staff.name,date,time,duration,status:auto?'approved':'pending',createdAt:Date.now()});
+  store.set('appts',appts);
+  st.textContent='Kaydedildi'; renderQueue(); renderCalendar(); updateBell();
+});
+
+/* ========= Admin: Takvim ========= */
+document.getElementById('calDate').value=todayISO();
+document.getElementById('viewCal').addEventListener('click',renderCalendar);
+function renderCalendar(){
+  if(!adminAuthed) return;
+  const date=document.getElementById('calDate').value;
+  const staffId=document.getElementById('calStaff').value;
+  const tb=document.getElementById('calTbody'); tb.innerHTML='';
+  const rows=(store.get('appts',[])||[]).filter(a=>a.date===date && (!staffId||a.staffId===staffId) && a.status!=='rejected')
+    .sort((a,b)=>a.time.localeCompare(b.time));
+  rows.forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="checkbox" data-id="${a.id}"></td>
+      <td>${a.time} (${a.duration}') </td><td>${a.name}</td><td>${a.serviceName} / ${a.staffName||''}</td><td>${statusTR(a.status)}</td>
+      <td>${a.status!=='cancelled'?`<button class="btn" onclick="cancelAdmin('${a.id}')">İptal</button>`:''} <button class="btn" onclick="adminDelete('${a.id}')">Sil</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+window.cancelAdmin=(id)=>{const list=store.get('appts',[])||[];const i=list.findIndex(x=>x.id===id); if(i<0) return; list[i].status='cancelled'; store.set('appts',list); renderCalendar(); renderQueue(); updateBell();}
+
+/* ========= Admin: Ustalar (tek ekranda saat + gün) ========= */
+function dayChipsHTML(prefix, checked=[]){
+  return DAY_LABELS.map((lab,i)=>{
+    const on = checked.includes(i) ? 'checked' : '';
+    return `<label class="small" style="display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;border-radius:999px;padding:4px 8px">
+      <input type="checkbox" data-dow="${i}" data-prefix="${prefix}" ${on} style="width:auto">${lab}</label>`;
+  }).join(' ');
+}
+function readDaysFrom(containerSel,prefix){
+  return [...document.querySelectorAll(`${containerSel} input[type="checkbox"][data-prefix="${prefix}"]:checked`)]
+          .map(x=>parseInt(x.getAttribute('data-dow'),10));
+}
+function renderStaffManager(){
+  if(!adminAuthed) return;
+  const addWrap=document.getElementById('st_days_add');
+  if(addWrap) addWrap.innerHTML = dayChipsHTML('add',[1,2,3,4,5,6]);
+  const staff=(store.get('staff',[])||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
+  const tb=document.getElementById('st_tbody'); tb.innerHTML='';
+  staff.forEach(s=>{
+    const open=s.hours?.open || store.get('settings').open || '09:00';
+    const close=s.hours?.close || store.get('settings').close || '21:00';
+    const days=Array.isArray(s.days)?s.days:[1,2,3,4,5,6];
+    const off=(s.offDates||[]).slice(0,3).join(' • ')+((s.offDates||[]).length>3?' …':'');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input id="st_name_${s.id}" value="${s.name||''}" style="max-width:220px"></td>
+      <td>
+        <input id="st_open_${s.id}" type="time" value="${open}" style="max-width:110px"> –
+        <input id="st_close_${s.id}" type="time" value="${close}" style="max-width:110px">
+      </td>
+      <td><div id="st_days_${s.id}" style="display:flex;gap:6px;flex-wrap:wrap">${dayChipsHTML(s.id,days)}</div></td>
+      <td>
+        <div class="small">${off||'—'}</div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <input type="date" id="st_off_${s.id}" style="max-width:160px">
+          <button class="btn" onclick="stAddOff('${s.id}')">Ekle</button>
+        </div>
+      </td>
+      <td>
+        <button class="btn" onclick="stSave('${s.id}')">Kaydet</button>
+        <button class="btn" onclick="stDelete('${s.id}')">Sil</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
+document.getElementById('st_add')?.addEventListener('click',()=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  const name=(document.getElementById('st_name').value||'').trim();
+  const open=document.getElementById('st_open').value||'09:00';
+  const close=document.getElementById('st_close').value||'21:00';
+  let days=readDaysFrom('#pane_staff','add'); if(days.length===0) days=[1,2,3,4,5,6];
+  if(!name){alert('Usta adı gerekli');return;}
+  const list=store.get('staff',[])||[]; list.push({id:uuid(),name,days,hours:{open,close},offDates:[]}); store.set('staff',list);
+  document.getElementById('st_name').value=''; renderStaffManager(); renderSelects(); renderSlots(); alert('Usta eklendi');
+});
+window.stSave=(id)=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  const list=store.get('staff',[])||[]; const i=list.findIndex(x=>x.id===id); if(i<0) return;
+  list[i].name=(document.getElementById(`st_name_${id}`).value||'').trim();
+  list[i].hours={open:document.getElementById(`st_open_${id}`).value||'09:00', close:document.getElementById(`st_close_${id}`).value||'21:00'};
+  list[i].days=readDaysFrom(`#st_days_${id}`,id);
+  if(!Array.isArray(list[i].offDates)) list[i].offDates=[];
+  store.set('staff',list); renderStaffManager(); renderSelects(); renderSlots(); alert('Usta güncellendi');
+};
+window.stDelete=(id)=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  if(!confirm('Usta silinsin mi? Bu ustanın randevuları kalır.')) return;
+  store.set('staff',(store.get('staff',[])||[]).filter(x=>x.id!==id));
+  renderStaffManager(); renderSelects(); renderSlots(); alert('Usta silindi');
+};
+window.stAddOff=(id)=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  const d=document.getElementById(`st_off_${id}`).value; if(!d) return;
+  const list=store.get('staff',[])||[]; const i=list.findIndex(x=>x.id===id); if(i<0) return;
+  const set=new Set(list[i].offDates||[]); set.add(d); list[i].offDates=[...set]; store.set('staff',list);
+  renderStaffManager(); alert('Kapalı gün eklendi');
+};
+
+/* ========= Admin: Hizmetler ========= */
+function renderServiceManager(){
+  if(!adminAuthed) return;
+  const tb=document.getElementById('sv_tbody'); const list=(store.get('services',[])||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  tb.innerHTML=list.map(s=>`
+    <tr>
+      <td><input id="sv_name_${s.id}" value="${s.name||''}" style="max-width:220px"></td>
+      <td><input id="sv_dur_${s.id}" type="number" min="5" step="5" value="${s.dur||30}" style="max-width:120px"></td>
+      <td><input id="sv_price_${s.id}" type="number" min="0" step="1" value="${s.price||0}" style="max-width:120px"></td>
+      <td>
+        <button class="btn" onclick="svSave('${s.id}')">Kaydet</button>
+        <button class="btn" onclick="svDelete('${s.id}')">Sil</button>
+      </td>
+    </tr>
+  `).join('');
+}
+document.getElementById('sv_add').addEventListener('click',()=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  const name=(document.getElementById('sv_name').value||'').trim();
+  const dur=parseInt(document.getElementById('sv_dur').value,10)||30;
+  const price=parseInt(document.getElementById('sv_price').value,10)||0;
+  if(!name){alert('Hizmet adı gerekli');return;}
+  const list=store.get('services',[])||[]; list.push({id:uuid(),name,dur,price}); store.set('services',list);
+  document.getElementById('sv_name').value=''; document.getElementById('sv_dur').value=''; document.getElementById('sv_price').value='';
+  renderServiceManager(); renderSelects(); renderSlots(); alert('Hizmet eklendi');
+});
+window.svSave=(id)=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  const list=store.get('services',[])||[]; const i=list.findIndex(x=>x.id===id); if(i<0) return;
+  list[i].name=(document.getElementById(`sv_name_${id}`).value||'').trim();
+  list[i].dur=parseInt(document.getElementById(`sv_dur_${id}`).value,10)||30;
+  list[i].price=parseInt(document.getElementById(`sv_price_${id}`).value,10)||0;
+  store.set('services',list); renderServiceManager(); renderSelects(); renderSlots(); alert('Hizmet güncellendi');
+};
+window.svDelete=(id)=>{
+  if(!adminAuthed) return alert('Yalnızca admin');
+  if(!confirm('Hizmet silinsin mi?')) return;
+  store.set('services',(store.get('services',[])||[]).filter(x=>x.id!==id));
+  renderServiceManager(); renderSelects(); renderSlots(); alert('Hizmet silindi');
+};
+
+/* ========= Admin: PIN Talepleri ========= */
+function renderPinReqs(){
+  if(!adminAuthed) return;
+  const tb=document.getElementById('pinTbody'); const list=(store.get('pinReqs',[])||[]).slice().sort((a,b)=>b.createdAt-a.createdAt);
+  tb.innerHTML=list.map(r=>`<tr><td>${r.phone}</td><td>${r.newPin}</td><td>${new Date(r.createdAt).toLocaleString('tr-TR')}</td>
+    <td><button class="btn" onclick="pinDone('${r.id}')">Tamamlandı</button></td></tr>`).join('');
+}
+window.pinDone=(id)=>{store.set('pinReqs',(store.get('pinReqs',[])||[]).filter(x=>x.id!==id)); renderPinReqs(); updateBell();};
+
+/* ========= Admin: Raporlar ========= */
+function renderReports(){
+  if(!adminAuthed) return;
+  const cards=document.getElementById('reportCards'); const appts=store.get('appts',[])||[];
+  const today=todayISO();
+  const weekStart=(()=>{const d=new Date();const day=d.getDay();d.setDate(d.getDate()-((day+6)%7));return d.toISOString().slice(0,10)})();
+  const isWeek=(d)=>d>=weekStart;
+  const tday=appts.filter(a=>a.date===today);
+  const wday=appts.filter(a=>isWeek(a.date));
+  const sumPrice = list => list.reduce((s,a)=>{const svc=(store.get('services',[])||[]).find(x=>x.id===a.serviceId); return s + (svc?.price||0);},0);
+  cards.innerHTML=`
+    <div class="card stats-card"><div class="small">Bugün Toplam</div><div style="font-size:22px">${tday.length}</div></div>
+    <div class="card stats-card"><div class="small">Bugün Onaylı</div><div style="font-size:22px">${tday.filter(a=>a.status==='approved').length}</div></div>
+    <div class="card stats-card"><div class="small">Bugün Tutar (TL)</div><div style="font-size:22px">${sumPrice(tday)}</div></div>
+    <div class="card stats-card"><div class="small">Hafta Toplam</div><div style="font-size:22px">${wday.length}</div></div>
+    <div class="card stats-card"><div class="small">Hafta Onaylı</div><div style="font-size:22px">${wday.filter(a=>a.status==='approved').length}</div></div>
+    <div class="card stats-card"><div class="small">Hafta Tutar (TL)</div><div style="font-size:22px">${sumPrice(wday)}</div></div>
+  `;
+}
+
+/* ========= Başlangıç ========= */
+document.getElementById('logoImg').src=''; // istersen buraya kendi logo base64’ünü koy
+document.getElementById('f_date').value=todayISO();
+document.getElementById('a_date').value=todayISO();
+renderSelects();
+renderSlots();
+updateBell();
+
+if(store.get(LS_ADMIN_SESSION)===true){ setAdminUI(true); }
+const savedUser=store.get(LS_USER_SESSION);
+if(savedUser){
+  document.getElementById('userBtn').textContent=`${savedUser.name} (Hesap)`;
+  document.getElementById('f_name').value=savedUser.name||'';
+  document.getElementById('f_phone').value=(savedUser.phone||'').replace('+90','0');
+}
+loadMyAppts();
+
+/* Hash ile direkt panel açma (isteğe bağlı) */
+if(location.hash && document.querySelector(location.hash)){
+  try{ openAdminPane(location.hash); }catch(e){}
+}
+</script>
+</body>
+</html>
