@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ahmet Tekeli • Randevu Sistemi (Firebase)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5f8; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+  --panel:#ffffff; --brand:#0f172a; --gold:#d4af37;
+  --nav:#0b1223; --nav2:#0f1a33;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:1100px;margin:0 auto;padding:0 14px}
+header{position:sticky;top:0;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:50}
+.header-row{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 0}
+.brand{display:flex;flex-direction:column}
+.brand .title{font-family:Georgia,serif;font-size:26px;line-height:1;color:var(--brand);font-weight:700}
+.brand .sub{color:var(--muted);font-size:12px;margin-top:2px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);padding:8px 10px;border-radius:999px;background:#fff}
+.btn{border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:10px;cursor:pointer}
+.btn-primary{background:var(--gold);border-color:var(--gold);color:#111}
+#bellBtn{display:none}
+#menuToggle{display:none}
+#banner{display:none;border:1px dashed #a3a3a3;padding:6px 10px;border-radius:999px;color:#374151;font-size:12px}
+
+/* layout */
+.page{display:grid;grid-template-columns:260px 1fr;gap:16px;margin:18px 0}
+#sidebar{display:none;position:sticky;top:64px;align-self:start;background:linear-gradient(180deg,var(--nav),var(--nav2));color:#fff;border-radius:16px;padding:12px;border:1px solid #111936}
+.nav-title{display:flex;align-items:center;gap:8px;font-weight:700;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06)}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:6px 0;color:#e5e7eb;text-decoration:none;border-radius:12px}
+.nav a:hover,.nav a.active{background:rgba(255,255,255,.1)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+h2{margin:0 0 12px 0}
+.field{margin:10px 0}
+label{display:block;font-weight:600;margin:0 0 6px 0}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* slot scroller */
+.slotbar{display:flex;gap:10px;overflow:auto;padding:6px 2px}
+.slot{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;flex:0 0 auto}
+.slot.dis{opacity:.45;pointer-events:none;text-decoration:line-through}
+.slot.sel{background:#111827;color:#fff;border-color:#111827;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+
+.small{font-size:12px;color:var(--muted)}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi .box{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+
+/* sheet (modal) */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;z-index:60}
+.sheet .panel{width:100%;max-height:90vh;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 30px rgba(0,0,0,.25);padding:14px 14px 20px;overflow:auto}
+.sheet.show{display:flex}
+.sheet h3{margin:4px 0 10px 0}
+
+/* toast */
+#toast{position:fixed;left:50%;top:-80px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 14px;border-radius:999px;box-shadow:0 10px 24px rgba(0,0,0,.18);z-index:80;transition:top .45s}
+#toast.show{top:12px}
+
+@media(max-width:820px){
+  .page{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<header>
+  <div class="wrap header-row">
+    <div class="brand">
+      <div class="title">AHMET TEKELİ</div>
+      <div class="sub">Erkek Kuaförü</div>
+    </div>
+
+    <div class="top-actions">
+      <span id="banner">⚙️ <b id="modeLabel"></b> modunda</span>
+      <button id="menuToggle" class="btn">☰ Menü</button>
+      <button id="bellBtn" class="badge" title="Bildirimler">🔔 <span id="bellCount" class="small">0</span></button>
+      <button id="adminOpen" class="badge">👨‍💼 Admin</button>
+      <button id="custOpen" class="badge">👤 Müşteri</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap page">
+  <!-- Sidebar (admin only) -->
+  <aside id="sidebar">
+    <div class="nav-title">Yönetim</div>
+    <nav class="nav">
+      <a href="#" data-panel="home" class="active">🏠 Ana Ekran</a>
+      <a href="#" data-panel="queue">🏘️ Onay Kuyruğu</a>
+      <a href="#" data-panel="calendar">🗓️ Günlük Takvim</a>
+      <a href="#" data-panel="staff">💈 Ustalar</a>
+      <a href="#" data-panel="services">🧰 Hizmetler</a>
+      <a href="#" data-panel="customers">👥 Müşteriler</a>
+      <a href="#" data-panel="pins">🔑 PIN Talepleri</a>
+      <a href="#" data-panel="reports">📊 Raporlar</a>
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <section>
+    <!-- Home -->
+    <div id="pane_home" class="card">
+      <h2>Randevu Oluştur</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label>Ad Soyad</label>
+          <input id="f_name" placeholder="Adınız ve Soyadınız">
+        </div>
+        <div class="field">
+          <label>Telefon</label>
+          <input id="f_phone" placeholder="05xxxxxxxxx" inputmode="tel">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Berber</label>
+          <select id="f_staff"><option disabled selected>— Seçiniz —</option></select>
+        </div>
+        <div class="field">
+          <label>Hizmet</label>
+          <select id="f_service"><option disabled selected>— Seçiniz —</option></select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Tarih</label>
+          <input type="date" id="f_date">
+        </div>
+        <div class="field">
+          <label>Uygun Saatler</label>
+          <div id="slotbar" class="slotbar" aria-label="Uygun saatler"></div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn btn-primary" id="f_book">RANDEVU AL</button>
+        <span class="small" id="f_status"></span>
+      </div>
+
+      <div class="kpi" style="margin-top:18px;display:none" id="adminKpi">
+        <div class="box"><div class="small">Bugünkü Randevu</div><b id="kpiToday">0</b></div>
+        <div class="box"><div class="small">Onaylı/Bekleyen/İptal</div><b id="kpiOBI">0/0/0</b></div>
+        <div class="box"><div class="small">Haftalık Toplam</div><b id="kpiWeek">0</b></div>
+      </div>
+    </div>
+
+    <!-- Admin panels -->
+    <div id="pane_queue" class="card" style="display:none"><h2>Onay Kuyruğu</h2><div id="queueList" class="small">Kuyruk boş.</div></div>
+    <div id="pane_calendar" class="card" style="display:none"><h2>Günlük Takvim</h2><div id="calList" class="small">—</div></div>
+    <div id="pane_staff" class="card" style="display:none">
+      <h2>Ustalar</h2>
+      <div class="actions"><input id="newStaffName" placeholder="Yeni usta adı"><button class="btn" id="addStaff">Ekle</button></div>
+      <ul id="staffList"></ul>
+      <hr>
+      <h3>Çalışma Saatleri</h3>
+      <div class="grid-2">
+        <div class="field"><label>Usta</label><select id="wh_staff"></select></div>
+        <div class="field"><label>Slot (dk)</label><input id="wh_slot" type="number" value="15"></div>
+      </div>
+      <div id="wh_days" class="actions" style="flex-wrap:wrap"></div>
+      <div class="actions" style="margin-top:8px"><button class="btn btn-primary" id="saveWorkHours">Kaydet</button><span class="small" id="wh_status"></span></div>
+    </div>
+
+    <div id="pane_services" class="card" style="display:none"><h2>Hizmetler</h2><div class="actions"><input id="newSvcName" placeholder="Hizmet adı"><input id="newSvcDur" type="number" placeholder="Süre (dk)" style="max-width:140px"><input id="newSvcPrice" type="number" placeholder="Fiyat (TL)" style="max-width:140px"><button class="btn" id="addSvc">Ekle</button></div><ul id="svcList"></ul></div>
+    <div id="pane_customers" class="card" style="display:none"><h2>Müşteriler</h2><div id="custList" class="small">—</div></div>
+    <div id="pane_pins" class="card" style="display:none"><h2>PIN Talepleri</h2><div id="pinList" class="small">—</div></div>
+    <div id="pane_reports" class="card" style="display:none"><h2>Raporlar</h2><div class="small">Yakında…</div></div>
+  </section>
+</main>
+
+<!-- Admin sheet -->
+<div id="sheetAdmin" class="sheet" aria-hidden="true">
+  <div class="panel">
+    <h3>Yönetici Girişi</h3>
+    <div class="grid-2">
+      <div class="field"><label>Admin Telefon</label><input id="adminPhone" value="+905356749243"></div>
+      <div class="field"><label>Admin Şifre</label><input id="adminPass" type="password" placeholder="••••••"></div>
+    </div>
+    <div class="actions" style="margin-top:8px">
+      <button class="btn btn-primary" id="adminLoginBtn">Giriş Yap</button>
+      <button class="btn" id="adminLogoutBtn">Çıkış</button>
+      <span id="adminStatus" class="small"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Customer sheet -->
+<div id="sheetCust" class="sheet" aria-hidden="true">
+  <div class="panel">
+    <h3>Müşteri Girişi / Kayıt</h3>
+    <div class="grid-2">
+      <div class="field"><label>Ad Soyad</label><input id="c_name" placeholder="Ad Soyad"></div>
+      <div class="field"><label>Telefon</label><input id="c_phone" placeholder="05xxxxxxxxx" inputmode="tel"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>PIN (4 hane)</label><input id="c_pin" maxlength="4" inputmode="numeric"></div>
+      <div class="field"><label style="visibility:hidden">—</label><button class="btn btn-primary" id="c_login">Giriş / Kayıt</button></div>
+    </div>
+    <p class="small" id="c_status"></p>
+  </div>
+</div>
+
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+<script>
+/*** ==== Basit Store ==== ***/
+const store = {
+  get(k,d){ try{const v=localStorage.getItem(k); return v===null? d : JSON.parse(v);}catch(e){ return d } },
+  set(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} },
+  del(k){ try{localStorage.removeItem(k)}catch(e){} }
+};
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function toast(msg,ms=2600){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),ms); }
+
+/*** ==== Firebase ==== ***/
+const firebaseConfig = {
+  apiKey: "AIzaSyBtSQ9_5R42BU5ga0cOt1QETkC5nOf2tW4",
+  authDomain: "randevu-81305.firebaseapp.com",
+  projectId: "randevu-81305",
+  storageBucket: "randevu-81305.firebasestorage.app",
+  messagingSenderId: "686048709577",
+  appId: "1:686048709577:web:b2db4eeae83203ca2e3618",
+  measurementId: "G-3ZX91ND545"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/*** ==== Sabitler ==== ***/
+const MODE = 'FIREBASE';
+const ADMIN_PHONE_E164 = '+905356749243';
+const ADMIN_PASSWORD   = 'ahmet07';
+
+let adminOn=false, currentUser=null;
+let unsubUsers=null, unsubAppts=null, unsubStaff=null, unsubSvcs=null;
+
+function setAdminUI(on){
+  adminOn = !!on;
+  $('#sidebar').style.display   = adminOn? 'block':'none';
+  $('#bellBtn').style.display   = adminOn? 'inline-flex':'none';
+  $('#menuToggle').style.display= adminOn? 'inline-block':'none';
+  const qp=new URLSearchParams(location.search);
+  const showDebug=(qp.get('debug')==='1' && adminOn);
+  $('#modeLabel').textContent=MODE; $('#banner').style.display=showDebug?'inline-flex':'none';
+  $('#adminKpi').style.display = adminOn?'grid':'none';
+  goHome();
+}
+function goHome(){
+  $('[data-panel].active')?.classList.remove('active');
+  $('[data-panel="home"]')?.classList.add('active');
+  $$('#pane_queue,#pane_calendar,#pane_staff,#pane_services,#pane_customers,#pane_pins,#pane_reports').forEach(x=>x.style.display='none');
+  $('#pane_home').style.display='block';
+}
+function closeSheets(){ $('#sheetAdmin').classList.remove('show'); $('#sheetCust').classList.remove('show'); }
+
+/*** ==== Realtime Dinleyiciler ==== ***/
+function startRealtime(){
+  if(unsubUsers) unsubUsers();
+  if(unsubAppts) unsubAppts();
+  if(unsubStaff) unsubStaff();
+  if(unsubSvcs)  unsubSvcs();
+
+  unsubUsers = db.collection('users').onSnapshot(ss=>{
+    const list = ss.docs.map(d=>({id:d.id,...d.data()}));
+    renderCustomers(list);
+  });
+  unsubStaff = db.collection('staff').onSnapshot(ss=>{
+    const list = ss.docs.map(d=>({id:d.id,...d.data()}));
+    renderStaffList(list);
+    fillStaffSelects(list);
+    renderWorkHoursEditor(list);
+    computeSlots(); // saatleri etkiler
+  });
+  unsubSvcs = db.collection('services').onSnapshot(ss=>{
+    const list = ss.docs.map(d=>({id:d.id,...d.data()}));
+    renderServiceList(list);
+    fillServiceSelect(list);
+    computeSlots();
+  });
+  unsubAppts = db.collection('appts').onSnapshot(ss=>{
+    const list = ss.docs.map(d=>({id:d.id,...d.data()}));
+    renderQueue(list);
+    renderCalendar(list);
+    updateKpis(list);
+    updateBell(list);
+    computeSlots(list);
+  });
+}
+
+/*** ==== Başlangıç ==== ***/
+init();
+async function init(){
+  // admin session restore
+  const savedAdmin = store.get('adminSession')==='on';
+  const savedPhone = store.get('adminPhone',null);
+  if(savedAdmin && savedPhone===ADMIN_PHONE_E164){ setAdminUI(true); } else { setAdminUI(false); store.del('adminSession'); store.del('adminPhone'); }
+
+  $('#f_date').value = new Date().toISOString().slice(0,10);
+
+  // boş koleksiyonlar için UI yine de çalışsın
+  fillStaffSelects([]); fillServiceSelect([]);
+
+  startRealtime();
+}
+
+/*** ==== Form select doldurma ==== ***/
+function fillStaffSelects(list){
+  $('#f_staff').innerHTML = '<option disabled selected>— Seçiniz —</option>' + list.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  // workhours paneli
+  $('#wh_staff').innerHTML = list.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function fillServiceSelect(list){
+  $('#f_service').innerHTML = '<option disabled selected>— Seçiniz —</option>' + list.map(s=>`<option value="${s.id}">${s.name} — ${s.dur} dk</option>`).join('');
+}
+
+/*** ==== Saat/Slot hesaplama ==== ***/
+const toMin = t=>{const[h,m]=t.split(':').map(Number);return h*60+m}, toHHMM=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+function conflicts(appts,date,staffId){
+  return (appts||[]).filter(a=>a.date===date&&a.staffId===staffId&&a.status!=='cancelled'&&a.status!=='rejected')
+    .map(a=>({start:toMin(a.time),end:toMin(a.time)+a.duration}));
+}
+function overlaps(aS,aE,bS,bE){return aS<bE && aE>bS}
+function getHoursFor(staff,dateISO){
+  const dow=new Date(dateISO+'T00:00:00').getDay(); // 0=PAZ
+  if(staff?.hoursByDay && staff.hoursByDay[dow]) return staff.hoursByDay[dow];
+  return staff?.hours || {open:'09:00',close:'21:00',slot:15};
+}
+async function computeSlots(apptList){
+  const staffId=$('#f_staff').value; const svcId=$('#f_service').value; const date=$('#f_date').value;
+  const bar=$('#slotbar'); bar.innerHTML='';
+  if(!staffId||!svcId||!date) return;
+
+  const staffDoc = await db.collection('staff').doc(staffId).get(); const staff = staffDoc.exists ? staffDoc.data() : {};
+  const svcDoc   = await db.collection('services').doc(svcId).get(); const svc   = svcDoc.exists ? svcDoc.data() : {dur:30};
+  const dur=svc.dur||30;
+
+  const {open,close,slot} = getHoursFor(staff,date);
+  const openM=toMin(open), closeM=toMin(close), step=slot||15;
+  const taken=conflicts(apptList,date,staffId);
+  for(let t=openM; t+dur<=closeM; t+=step){
+    const disabled = taken.some(x=>overlaps(t,t+dur,x.start,x.end)) || (staff?.offDates||[]).includes(date) || (staff?.days && !staff.days.includes(new Date(date+'T00:00:00').getDay()));
+    const b=document.createElement('button'); b.type='button'; b.className='slot'+(disabled?' dis':''); b.textContent=toHHMM(t); b.dataset.time=toHHMM(t);
+    b.onclick=()=>{ if(disabled) return; $$('#slotbar .slot').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); };
+    bar.appendChild(b);
+  }
+}
+
+/*** ==== Randevu oluştur ==== ***/
+$('#f_staff').addEventListener('change',()=>computeSlots());
+$('#f_service').addEventListener('change',()=>computeSlots());
+$('#f_date').addEventListener('change',()=>computeSlots());
+
+$('#f_book').addEventListener('click', async ()=>{
+  const name=$('#f_name').value.trim();
+  const phoneRaw=$('#f_phone').value.trim(); // hızlı doğrulama
+  if(!/^\+?(\d|\s){10,16}$/.test(phoneRaw) && !/^05\d{9}$/.test(phoneRaw)){ toast('Telefon formatı hatalı'); return; }
+  const phone = phoneRaw.startsWith('+') ? phoneRaw.replace(/\s/g,'') : (phoneRaw.startsWith('05')? '+90'+phoneRaw.slice(1) : phoneRaw);
+
+  const staffId=$('#f_staff').value, svcId=$('#f_service').value, date=$('#f_date').value;
+  const timeBtn=document.querySelector('#slotbar .slot.sel'); const time=timeBtn?.dataset.time;
+  if(!name||!phone||!staffId||!svcId||!date||!time){ $('#f_status').textContent='Lütfen tüm alanları doldurun.'; toast('Eksik bilgi'); return; }
+
+  // aynı gün max 2 (pending+approved)
+  const sameDay = await db.collection('appts').where('phone','==',phone).where('date','==',date).get();
+  const activeCnt = sameDay.docs.map(d=>d.data()).filter(a=>a.status==='pending'||a.status==='approved').length;
+  if(activeCnt>=2){ toast('Aynı gün en fazla 2 aktif randevu'); return; }
+
+  // kullanıcı oluştur/çek
+  let uid=null;
+  const q=await db.collection('users').where('phone','==',phone).limit(1).get();
+  if(q.empty){
+    const uRef=await db.collection('users').add({name,phone,verified:true,pin:'0000',createdAt:Date.now()}); uid=uRef.id;
+  }else{ uid=q.docs[0].id; }
+
+  // hizmet/staff ayrıntı
+  const svc=(await db.collection('services').doc(svcId).get()).data();
+  const staff=(await db.collection('staff').doc(staffId).get()).data();
+
+  await db.collection('appts').add({
+    userId:uid,name,phone,
+    serviceId:svcId,serviceName:svc?.name||'Hizmet',duration:svc?.dur||30,price:svc?.price||0,
+    staffId,staffName:staff?.name||'Usta',
+    date,time,status:'pending',createdAt:Date.now()
+  });
+  $('#f_status').textContent='Randevu oluşturuldu (Onay bekliyor).';
+  toast('Randevu alındı • Onay bekliyor');
+});
+
+/*** ==== Kuyruk / Takvim / KPI ==== ***/
+function renderQueue(list){
+  const box=$('#queueList');
+  const rows=list.filter(a=>a.status==='pending').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  if(rows.length===0){ box.textContent='Kuyruk boş.'; return; }
+  box.innerHTML = rows.map(a=>`
+    <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0">
+      <div><b>${a.date} ${a.time}</b> • ${a.name} • ${a.serviceName} / ${a.staffName}</div>
+      <button class="btn" onclick="approve('${a.id}')">Onayla</button>
+      <button class="btn" onclick="reject('${a.id}')">Reddet</button>
+      <button class="btn" onclick="delAppt('${a.id}')">Sil</button>
+    </div>`).join('');
+}
+function renderCalendar(list){
+  const box=$('#calList'); const today=new Date().toISOString().slice(0,10);
+  const rows=list.filter(a=>a.date===today && a.status!=='rejected').sort((a,b)=>a.time.localeCompare(b.time));
+  box.innerHTML = rows.map(a=>`<div class="small"> ${a.time} (${a.duration}') — <b>${a.name}</b> • ${a.serviceName} / ${a.staffName} • ${a.status}</div>`).join('') || '—';
+}
+function updateKpis(list){
+  const today=new Date().toISOString().slice(0,10);
+  const d=list.filter(a=>a.date===today);
+  $('#kpiToday').textContent = String(d.length);
+  const ob = [d.filter(a=>a.status==='approved').length, d.filter(a=>a.status==='pending').length, d.filter(a=>a.status==='cancelled').length];
+  $('#kpiOBI').textContent = ob.join('/');
+  const now=new Date(); const ws=new Date(now); ws.setDate(now.getDate()-now.getDay()); const we=new Date(ws); we.setDate(ws.getDate()+6);
+  const inWeek = list.filter(a=> (a.status!=='rejected') && (a.date>=ws.toISOString().slice(0,10) && a.date<=we.toISOString().slice(0,10)));
+  $('#kpiWeek').textContent = String(inWeek.length);
+}
+function updateBell(list){
+  const cnt=(list||[]).filter(a=>a.status==='pending').length;
+  $('#bellCount').textContent=String(cnt);
+}
+
+/*** ==== Admin işlemleri ==== ***/
+window.approve=async(id)=>{ await db.collection('appts').doc(id).set({status:'approved'},{merge:true}); toast('Onaylandı'); };
+window.reject =async(id)=>{ await db.collection('appts').doc(id).set({status:'rejected'},{merge:true}); toast('Reddedildi'); };
+window.delAppt=async(id)=>{ if(!confirm('Bu randevu silinsin mi?')) return; await db.collection('appts').doc(id).delete(); toast('Silindi'); };
+
+/*** ==== Ustalar ==== ***/
+function renderStaffList(list){
+  const ul=$('#staffList');
+  ul.innerHTML = (list||[]).sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(s=>`<li style="display:flex;gap:8px;align-items:center;margin:6px 0">
+    <span style="flex:1">${s.name}</span>
+    <button class="btn" onclick="delStaff('${s.id}')">Sil</button>
+  </li>`).join('') || '<div class="small">Usta yok.</div>';
+}
+$('#addStaff').addEventListener('click', async ()=>{
+  const name=$('#newStaffName').value.trim(); if(!name){toast('Usta adı gerekli');return;}
+  await db.collection('staff').add({name,days:[1,2,3,4,5,6],hours:{open:'09:00',close:'21:00',slot:15},offDates:[]});
+  $('#newStaffName').value=''; toast('Usta eklendi');
+});
+window.delStaff=async(id)=>{ await db.collection('staff').doc(id).delete(); toast('Usta silindi'); };
+
+/*** ==== Çalışma Saatleri (tek satır kaydırmalı) ==== ***/
+const DAY_LABELS=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+function renderWorkHoursEditor(staffList){
+  const wrap=$('#wh_days'); wrap.innerHTML='';
+  const selId=$('#wh_staff').value || (staffList[0]?.id||''); $('#wh_staff').value=selId;
+  const staff=staffList.find(s=>s.id===selId); if(!staff) return;
+
+  const byDay = staff.hoursByDay || {};
+  const slot = staff.hours?.slot || 15;
+  $('#wh_slot').value = slot;
+
+  DAY_LABELS.forEach((lab,i)=>{
+    const d=byDay[i] || staff.hours || {open:'09:00',close:'21:00',slot:15};
+    const chk = (staff.days||[1,2,3,4,5,6]).includes(i) ? 'checked' : '';
+    const item=document.createElement('div');
+    item.style.cssText='display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:6px 8px;flex:0 0 auto';
+    item.innerHTML = `
+      <label class="badge" style="background:#f8fafc;border-color:#e5e7eb">${lab} <input type="checkbox" data-dow="${i}" ${chk} style="margin-left:6px;width:auto"></label>
+      <input type="time" value="${d.open}" data-typ="open" data-dow="${i}" style="max-width:110px">
+      <span>–</span>
+      <input type="time" value="${d.close}" data-typ="close" data-dow="${i}" style="max-width:110px">`;
+    wrap.appendChild(item);
+  });
+}
+$('#wh_staff').addEventListener('change', async ()=>{
+  const staffList=(await db.collection('staff').get()).docs.map(d=>({id:d.id,...d.data()}));
+  renderWorkHoursEditor(staffList);
+});
+$('#saveWorkHours').addEventListener('click', async ()=>{
+  const sid=$('#wh_staff').value; if(!sid){toast('Usta seçiniz');return;}
+  const days=[...document.querySelectorAll('#wh_days input[type="checkbox"]')].filter(x=>x.checked).map(x=>parseInt(x.dataset.dow,10));
+  const hoursByDay={};
+  [...document.querySelectorAll('#wh_days input[type="time"]')].forEach(inp=>{
+    const i=parseInt(inp.dataset.dow,10); hoursByDay[i]=hoursByDay[i]||{open:'09:00',close:'21:00'};
+    hoursByDay[i][inp.dataset.typ]=inp.value||'09:00';
+  });
+  await db.collection('staff').doc(sid).set({days,hoursByDay,hours:{open:hoursByDay[1]?.open||'09:00',close:hoursByDay[1]?.close||'21:00',slot:parseInt($('#wh_slot').value||'15',10)}},{merge:true});
+  $('#wh_status').textContent='Kaydedildi.'; toast('Usta çalışma saatleri kaydedildi');
+});
+
+/*** ==== Hizmetler ==== ***/
+function renderServiceList(list){
+  const ul=$('#svcList');
+  ul.innerHTML = (list||[]).sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(s=>`<li style="display:flex;gap:8px;align-items:center;margin:6px 0">
+    <span style="flex:1">${s.name} — ${s.dur} dk / ${s.price||0} TL</span>
+    <button class="btn" onclick="delSvc('${s.id}')">Sil</button>
+  </li>`).join('') || '<div class="small">Hizmet yok.</div>';
+}
+$('#addSvc').addEventListener('click', async ()=>{
+  const name=$('#newSvcName').value.trim(), dur=parseInt($('#newSvcDur').value||'30',10), price=parseInt($('#newSvcPrice').value||'0',10);
+  if(!name){toast('Hizmet adı gerekli');return;}
+  await db.collection('services').add({name,dur,price});
+  $('#newSvcName').value=''; $('#newSvcDur').value=''; $('#newSvcPrice').value='';
+  toast('Hizmet eklendi');
+});
+window.delSvc=async(id)=>{ await db.collection('services').doc(id).delete(); toast('Hizmet silindi'); };
+
+/*** ==== Müşteriler & PIN talepleri ==== ***/
+function renderCustomers(list){
+  const box=$('#custList');
+  box.innerHTML = (list||[]).sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(u=>`<div class="small">${u.name||'-'} — ${u.phone||''} ${u.verified?'✅':''}</div>`).join('') || '—';
+}
+function renderPinRequests(){
+  // basit örnek: resetReqs koleksiyonu kullanmak istersen buraya listener ekle
+  $('#pinList').textContent='—';
+}
+
+/*** ==== Bildirim Çanı ==== ***/
+$('#bellBtn').addEventListener('click', ()=>{ openPanel('queue'); });
+
+/*** ==== Admin & Customer Sheets ==== ***/
+$('#adminOpen').addEventListener('click', ()=>{$('#sheetAdmin').classList.add('show');});
+$('#custOpen').addEventListener('click', ()=>{$('#sheetCust').classList.add('show');});
+$('#sheetAdmin').addEventListener('click',e=>{ if(e.target.id==='sheetAdmin') e.currentTarget.classList.remove('show');});
+$('#sheetCust').addEventListener('click',e=>{ if(e.target.id==='sheetCust') e.currentTarget.classList.remove('show');});
+
+$('#adminLoginBtn').addEventListener('click', ()=>{
+  const p=$('#adminPhone').value.trim(), pass=$('#adminPass').value.trim();
+  if(p===ADMIN_PHONE_E164 && pass===ADMIN_PASSWORD){
+    setAdminUI(true);
+    store.set('adminSession','on'); store.set('adminPhone',p);
+    $('#adminStatus').textContent='Giriş başarılı'; closeSheets(); toast('Admin olarak giriş yapıldı');
+  }else $('#adminStatus').textContent='Bilgiler hatalı';
+});
+$('#adminLogoutBtn').addEventListener('click', ()=>{
+  setAdminUI(false); store.del('adminSession'); store.del('adminPhone'); $('#adminStatus').textContent='Çıkış yapıldı'; toast('Admin oturumu kapatıldı');
+});
+
+$('#c_login').addEventListener('click', async ()=>{
+  const name=$('#c_name').value.trim(), phoneRaw=$('#c_phone').value.trim(), pin=$('#c_pin').value.trim();
+  if(!name||!phoneRaw||pin.length!==4){ $('#c_status').textContent='Ad/Telefon ve 4 haneli PIN gerekli.'; return; }
+  const phone = phoneRaw.startsWith('+')?phoneRaw.replace(/\s/g,''):(phoneRaw.startsWith('05')?'+90'+phoneRaw.slice(1):phoneRaw);
+  const q=await db.collection('users').where('phone','==',phone).limit(1).get();
+  if(q.empty){ await db.collection('users').add({name,phone,verified:true,pin,createdAt:Date.now()}); }
+  currentUser={name,phone};
+  $('#c_status').textContent='Giriş başarılı.'; toast('Müşteri girişi yapıldı'); setTimeout(closeSheets,400);
+});
+
+/*** ==== Menü Navigasyon ==== ***/
+$('#menuToggle').addEventListener('click', ()=>{
+  $('#sidebar').style.boxShadow='0 0 0 9999px rgba(0,0,0,.15)';
+  setTimeout(()=>$('#sidebar').style.boxShadow='none', 600);
+});
+$$('#sidebar .nav a').forEach(a=>{
+  a.addEventListener('click',(e)=>{ e.preventDefault(); openPanel(a.dataset.panel); });
+});
+function openPanel(key){
+  if(!adminOn){ toast('Bu bölüm yalnızca admin içindir'); return; }
+  $$('#sidebar .nav a').forEach(x=>x.classList.toggle('active', x.dataset.panel===key));
+  $$('#pane_home,#pane_queue,#pane_calendar,#pane_staff,#pane_services,#pane_customers,#pane_pins,#pane_reports').forEach(x=>x.style.display='none');
+  const id = key==='home' ? '#pane_home' : `#pane_${key}`; const el=$(id); if(el) el.style.display='block';
+  if(key==='queue'){ /* realtime zaten dolduruyor */ }
+  if(key==='staff'){ /* realtime */ }
+  if(key==='services'){ /* realtime */ }
+  if(key==='pins'){ renderPinRequests(); }
+}
+
+/*** ==== Yardımcı ==== ***/
+function openPanelHome(){ openPanel('home'); }
+</script>
+</body>
+</html>
