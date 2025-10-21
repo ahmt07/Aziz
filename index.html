@@ -139,9 +139,9 @@ thead th{background:#1f2530;font-weight:700}
 #weekChart{ width:100%; max-height:320px }
 
 /* Responsive: logo & rozetler küçülsün */
-@media (max-width:860px){ .brand img{ height:34px } .brand-sub .t1{font-size:14px} .brand-sub .t2{font-size:12px} }
+@media (max-width:860px){ .brand img{ height:40px } .brand-sub .t1{font-size:14px} .brand-sub .t2{font-size:12px} }
 @media (max-width:680px){
-  .brand img{ height:28px }
+  .brand img{ height:36px }
   .badge{ padding:7px 10px; font-size:14px }
   .chip{  padding:5px 9px;  font-size:12px }
 }
@@ -498,7 +498,7 @@ function tStatus(s){
     case 'pending'  : return { t:'Onay bekliyor', c:'st-pending'   };
     case 'approved' : return { t:'Onaylandı',     c:'st-approved'  };
     case 'cancelled': return { t:'İptal',         c:'st-cancelled' };
-    case 'rejected' : return { t:'Reddedildi',    c:'st-rejected'  };
+    case 'rejectedy' : return { t:'Reddedildi',    c:'st-rejected'  };
     case 'deleted'  : return { t:'Silindi',       c:'st-deleted'   };
   }
   return { t:'', c:'' };
@@ -848,7 +848,7 @@ $('#addSvc').onclick=async ()=>{
 };
 
 /* ===== Çalışma saatleri editörü ===== */
-const DAYS=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const DAYS=['Pzt','Sal','Çar','Per','Cum','Cmt','Pzr'];
 function renderWorkEditor(){
   const sid=$('#wh_staff').value || lastStaff[0]?.id; if(!sid){ $('#wh_staff').innerHTML=''; return; }
   $('#wh_staff').value=sid;
@@ -869,11 +869,11 @@ function renderWorkEditor(){
     const row=document.createElement('div'); row.className='row'; row.style.margin='4px 0';
     const d=by[i]||{};
     row.innerHTML=`
-      <div style="min-width:60px"><b>${DAYS[i]}</b></div>
+      <div style="min-width:40px"><b>${DAYS[i]}</b></div>
       <input type="time" data-k="open1"  data-dow="${i}" value="${d.open1||staff.hours?.open||'09:00'}" style="max-width:120px">
       <span>–</span>
       <input type="time" data-k="close1" data-dow="${i}" value="${d.close1||staff.hours?.close||'21:00'}" style="max-width:120px">
-      <span style="width:12px"></span>
+      <span style="width:10px"></span>
       <input type="time" data-k="open2"  data-dow="${i}" value="${d.open2||''}" style="max-width:120px">
       <span>–</span>
       <input type="time" data-k="close2" data-dow="${i}" value="${d.close2||''}" style="max-width:120px">`;
