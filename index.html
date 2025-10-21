@@ -194,7 +194,7 @@ thead th{background:#1f2530;font-weight:700}
   </section>
 
   <!-- Haftalık grafik + PDF -->
-  <section class="card" style="padding:12px;margin-top:12px">
+  <section class="card" style="padding:10px;margin-top:10px">
     <div class="row" style="gap:8px; margin:0 0 10px">
       <button class="btn" id="btnPdfToday">🧾 Bugün PDF İndir</button>
       <button class="btn" id="btnRefreshChart">📈 Haftalık Grafiği Yenile</button>
@@ -481,7 +481,6 @@ function tStatus(s){
     case 'pending'  : return { t:'Onay bekliyor', c:'st-pending'   };
     case 'approved' : return { t:'Onaylandı',     c:'st-approved'  };
     case 'cancelled': return { t:'İptal',         c:'st-cancelled' };
-    case 'rejected' : return { t:'Reddedildi',    c:'st-rejected'  };
     case 'deleted'  : return { t:'Silindi',       c:'st-deleted'   };
   }
   return { t:'', c:'' };
@@ -559,7 +558,7 @@ function startRealtime(){
         const prev=myPrevStatus[a.id];
         if(prev==='pending' && (a.status==='approved'||a.status==='rejected'||a.status==='cancelled'||a.status==='deleted')){
           myUnread++; const b=$('#myBadge'); b.style.display='inline-flex'; b.textContent=String(myUnread);
-          toast(a.status==='approved'?'✅ Randevunuz onaylandı':a.status==='rejected'?'⛔ Randevunuz reddedildi':a.status==='cancelled'?'ℹ️ Randevunuz iptal edildi':'🗑 Randevunuz silindi');
+          toast(a.status==='approved'?'✅ Randevunuz onaylandı':a.status==='cancelled'?'ℹ️ Randevunuz iptal edildi':'🗑 Randevunuz silindi');
           playAlert();
         }
         myPrevStatus[a.id]=a.status;
