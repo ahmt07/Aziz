@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device=device-width, initial-scale=1">
+<title>Ahmet Tekeli Erkek Kuaförü • Online Randevu Sistemi</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1217; --card:#171a21; --ink:#e5e7eb; --muted:#9ca3af; --line:#2a2f39;
+  --brand:#d4af37; --brand2:#3b82f6; --danger:#ef4444; --ok:#2ea44f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:1100px;margin:0 auto;padding:0 14px}
+
+/* Header */
+header{position:sticky;top:0;background:rgba(15,18,23,.65);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:30}
+.header-row{position:relative;display:flex;align-items:center;justify-content:center;padding:12px 0}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{height:42px;width:auto;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+.actions-left,.actions-right{
+  position:absolute;top:50%;transform:translateY(-50%);display:flex;gap:8px;align-items:center}
+.actions-left{left:0}
+.actions-right{right:0}
+
+/* Badges / Chips */
+.badge{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:#222733;border-radius:999px;padding:8px 12px;cursor:pointer;color:#dbe3f2}
+.badge .dot{min-width:18px;height:18px;border-radius:999px;background:#ef4444;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.chip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:#222733;color:#e5e7eb;border-radius:999px;padding:6px 10px}
+
+/* Blink bell */
+#bellBtn.blink{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%{filter:none}50%{filter:drop-shadow(0 0 10px #f66) saturate(1.2)}100%{filter:none}}
+
+/* Main */
+main{padding:16px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.24)}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:760px){.grid-2{grid-template-columns:minmax(0,1fr)}}
+h2{margin:0 0 12px}
+h3,h4{margin:0 0 10px}
+label{display:block;font-weight:600;margin:0 0 6px}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#1d212a;color:var(--ink);font-size:16px}
+input[readonly]{opacity:.8}
+.btn{border:1px solid var(--line);background:#232a36;color:#e5e7eb;padding:10px 14px;border-radius:10px;cursor:pointer}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#111}
+.small{font-size:12px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Saat grid */
+.slotgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media(max-width:540px){.slotgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.slot{border:1px solid #2b313c;background:#232a36;color:#e8edf7;border-radius:22px;padding:14px 0;font-weight:700;text-align:center}
+.slot.busy{background:#2a2f39;color:#6b7280;pointer-events:none}
+.slot.sel{background:#0ea5e9;color:#00131a;border-color:#0ea5e9}
+
+/* Table */
+.table-scroll{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #2b313c;text-align:left}
+thead th{background:#1f2530;font-weight:700}
+
+/* KPI */
+.kpi{display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.kpi .box{border:1px solid var(--line);border-radius:12px;padding:10px;background:#1b2029}
+
+/* Sheets (modal) */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:50}
+.sheet.show{display:flex}
+.sheet .panel{width:100%;max-height:92vh;background:#141820;border:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -12px 30px rgba(0,0,0,.35);padding:14px 14px 18px;overflow:auto}
+.sheet .panel.admin{ max-width:960px; padding:26px; border-top:5px solid var(--brand)}
+.sheet .panel.customer{ max-width:900px; padding:24px; border-top:5px solid var(--brand2)}
+.sheet .panel.admin h3{font-size:24px;color:#f6e7c2}
+.sheet .panel.customer h3{font-size:23px;color:#cfe3ff}
+
+/* Toast */
+#toast{position:fixed;left:50%;top:-80px;transform:translateX(-50%);background:#0b1220;color:#fff;padding:10px 14px;border-radius:999px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:80;transition:top .45s;border:1px solid #325}
+#toast.show{top:12px}
+
+/* Password eye */
+.pass-wrap{ position:relative; }
+.pass-wrap input{ padding-right:46px; }
+.pass-wrap .eye{
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  padding:6px 10px; border-radius:8px; cursor:pointer; border:1px solid var(--line);
+  background:#2f323a; color:#e5e7eb;
+}
+
+/* Status badges (TR) */
+.badge-status{
+  display:inline-block; padding:4px 10px; border-radius:999px;
+  font-size:12px; font-weight:700; letter-spacing:.02em;
+  border:1px solid transparent;
+}
+.st-pending  { background:#3a3322; color:#f6e7c2; border-color:#b48b1d; }
+.st-approved { background:#1f3a2a; color:#c9f7d7; border-color:#2ea44f; }
+.st-cancelled{ background:#33373e; color:#e2e8f0; border-color:#6b7280; }
+.st-rejected { background:#3b1f24; color:#ffd7d7; border-color:#ef4444; }
+.st-deleted  { background:#3b1f1f; color:#ffdddd; border-color:#b91c1c; }
+
+/* Inputs tweaks */
+#f_date,#a_date,#rs_date{ max-width:240px; width:100%; padding:10px 12px; font-size:15px }
+@media(max-width:760px){ #f_date,#a_date,#rs_date{ max-width:100%; font-size:16px } }
+
+/* Chart area */
+#weekChart{ width:100%; max-height:320px }
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<header>
+  <div class="wrap header-row">
+    <!-- SOL: Admin -->
+    <div class="actions-left">
+      <span id="adminBadge" class="chip" style="display:none">👑 Admin aktif</span>
+      <button id="adminOpen" class="badge">👨‍💼 Admin</button>
+      <button id="bellBtn" class="badge" title="Bildirimler">🔔 <span id="bellCount" class="dot">0</span></button>
+      <button id="manageOpen" class="badge" style="display:none">⚙️ Yönetim</button>
+    </div>
+
+    <!-- ORTA: SADECE LOGO -->
+    <div class="brand">
+      <!-- Basit inline SVG logo (eskitme etkili) -->
+      <img alt="Ahmet Tekeli Logo" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='220' height='42' viewBox='0 0 550 110'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%23d4af37'/><stop offset='100%' stop-color='%23b0891d'/></linearGradient></defs><rect x='0' y='0' width='550' height='110' fill='none'/><text x='50%' y='56%' dominant-baseline='middle' text-anchor='middle' font-family='Georgia, serif' font-size='46' fill='url(%23g)'>AHMET TEKELİ</text><text x='50%' y='88%' dominant-baseline='middle' text-anchor='middle' font-family='Georgia, serif' font-size='20' fill='%23a5b4fc'>ERKEK KUAFÖRÜ</text></svg>">
+    </div>
+
+    <!-- SAĞ: Müşteri -->
+    <div class="actions-right">
+      <span id="custBadge" class="chip" style="display:none">👤 <b id="custNameShort">Müşteri</b></span>
+      <button id="custOpen"  class="badge">👤 Müşteri</button>
+      <button id="myApptsOpen" class="badge" style="display:none">📅 Randevularım <span id="myBadge" class="dot" style="display:none">0</span></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="randevu">
+    <h2>Randevu Oluştur</h2>
+    <div class="grid-2">
+      <div><label>Ad Soyad</label><input id="f_name" placeholder="Adınız Soyadınız"></div>
+      <div><label>Telefon</label><input id="f_phone" placeholder="05xxxxxxxxx" inputmode="tel"></div>
+      <div><label>Berber</label><select id="f_staff"><option disabled selected>— Seçiniz —</option></select></div>
+      <div><label>Hizmet</label><select id="f_service"><option disabled selected>— Seçiniz —</option></select></div>
+      <div><label>Tarih</label><input type="date" id="f_date"></div>
+      <div>
+        <label>Saat Seçimi</label>
+        <div id="slotgrid" class="slotgrid"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-primary" id="f_book">RANDEVU AL</button>
+      <span id="f_status" class="small"></span>
+    </div>
+    <div id="kpi" class="kpi">
+      <div class="box"><div class="small">Bugün</div><b id="kpiToday">0</b></div>
+      <div class="box"><div class="small">Durumlar</div><b id="kpiOBI">—</b></div>
+      <div class="box"><div class="small">Haftalık</div><b id="kpiWeek">—</b></div>
+    </div>
+  </section>
+
+  <!-- Haftalık grafik + PDF butonları -->
+  <section class="card" style="padding:12px;margin-top:12px">
+    <div class="row" style="gap:8px; margin:0 0 10px">
+      <button class="btn" id="btnPdfToday">🧾 Bugün PDF İndir</button>
+      <button class="btn" id="btnRefreshChart">📈 Haftalık Grafiği Yenile</button>
+    </div>
+    <h4>Haftalık Randevu Dağılımı</h4>
+    <div style="height:240px">
+      <canvas id="weekChart"></canvas>
+    </div>
+  </section>
+</main>
+
+<!-- Onay kuyruğu -->
+<div id="sheetBell" class="sheet"><div class="panel admin">
+  <h3>Onay Kuyruğu</h3>
+  <div id="queueList" class="small">Kuyruk boş.</div>
+</div></div>
+
+<!-- Admin girişi -->
+<div id="sheetAdmin" class="sheet"><div class="panel admin">
+  <h3>Yönetici Girişi</h3>
+  <div class="grid-2">
+    <div><label>Admin Telefon</label><input id="adminPhone" value="+905356749243" readonly></div>
+    <div><label>Şifre</label><input id="adminPass" type="password" placeholder="••••••"></div>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <button class="btn btn-primary" id="adminLoginBtn">Giriş Yap</button>
+    <button class="btn" id="adminLogoutBtn">Çıkış</button>
+    <span id="adminStatus" class="small"></span>
+  </div>
+</div></div>
+
+<!-- Müşteri girişi -->
+<div id="sheetCust" class="sheet"><div class="panel customer">
+  <h3>Müşteri Girişi / Kayıt</h3>
+  <div class="grid-2">
+    <div><label>Ad Soyad</label><input id="c_name" placeholder="Ad Soyad"></div>
+    <div><label>Telefon</label><input id="c_phone" placeholder="05xxxxxxxxx" inputmode="tel"></div>
+  </div>
+  <div class="grid-2">
+    <div class="input-group">
+      <label>Şifre</label>
+      <div class="pass-wrap">
+        <input id="c_pin" type="password" maxlength="32" inputmode="text" placeholder="Şifreniz">
+        <button class="btn eye" id="c_toggle">👁</button>
+      </div>
+    </div>
+    <div>
+      <label style="visibility:hidden">-</label>
+      <div class="row">
+        <button class="btn btn-primary" id="c_login">Giriş / Kayıt</button>
+        <button class="btn" id="c_forgot">Şifremi Unuttum</button>
+      </div>
+    </div>
+  </div>
+  <p class="small" id="c_status"></p>
+</div></div>
+
+<!-- Müşteri randevularım -->
+<div id="sheetMyAppts" class="sheet"><div class="panel customer">
+  <h3>Randevularım</h3>
+  <div class="row" style="gap:8px;margin-bottom:6px">
+    <select id="my_filter" style="max-width:220px">
+      <option value="upcoming">Yaklaşan</option>
+      <option value="all">Tümü</option>
+      <option value="past">Geçmiş</option>
+    </select>
+    <button class="btn" id="my_refresh">Yenile</button>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Tarih</th><th>Saat</th><th>Hizmet</th><th>Berber</th><th>Durum</th><th>İşlem</th></tr></thead>
+      <tbody id="my_tbody"></tbody>
+    </table>
+  </div>
+  <p class="small">“Değiştir” sonrası randevu tekrar onaya düşer.</p>
+</div></div>
+
+<!-- Randevu Değiştir -->
+<div id="sheetResched" class="sheet"><div class="panel customer">
+  <h3>Randevuyu Değiştir</h3>
+  <div class="grid-2">
+    <div><label>Tarih</label><input type="date" id="rs_date"></div>
+    <div><label>Saat Seçimi</label><div id="rs_grid" class="slotgrid"></div></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button class="btn btn-primary" id="rs_save">Kaydet</button>
+    <button class="btn" id="rs_cancel">Vazgeç</button>
+    <span id="rs_status" class="small"></span>
+  </div>
+</div></div>
+
+<!-- Yönetim -->
+<div id="sheetManage" class="sheet"><div class="panel admin">
+  <h3>Yönetim</h3>
+
+  <div class="grid-2">
+    <!-- Ustalar -->
+    <section class="card" style="padding:12px">
+      <h4>Ustalar</h4>
+      <div class="row">
+        <input id="newStaffName" placeholder="Yeni usta adı" style="max-width:260px">
+        <button class="btn" id="addStaff">Ekle</button>
+      </div>
+      <ul id="staffList" class="small"></ul>
+    </section>
+
+    <!-- Hizmetler -->
+    <section class="card" style="padding:12px">
+      <h4>Hizmetler</h4>
+      <div class="row" style="flex-wrap:wrap">
+        <input id="newSvcName" placeholder="Hizmet adı">
+        <input id="newSvcDur" type="number" placeholder="Süre (dk)" style="max-width:120px">
+        <input id="newSvcPrice" type="number" placeholder="Fiyat (TL)" style="max-width:120px">
+        <button class="btn" id="addSvc">Ekle</button>
+      </div>
+      <ul id="svcList" class="small"></ul>
+    </section>
+  </div>
+
+  <!-- Çalışma saatleri + çift aralık + offDates -->
+  <section class="card" style="padding:12px;margin-top:10px">
+    <h4>Usta Çalışma Saatleri</h4>
+    <div class="grid-2">
+      <div><label>Usta</label><select id="wh_staff"></select></div>
+      <div><label>Slot (dk) — (sistem 30 dk kullanır)</label><input id="wh_slot" type="number" value="30" disabled></div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div style="flex:1">
+        <b>Günlük Saatler (Çift Aralık)</b>
+        <div id="wh_days" class="chips" style="margin-top:6px"></div>
+        <div id="wh_intervals" class="grid-2" style="margin-top:8px"></div>
+      </div>
+      <div style="flex:1">
+        <b>İzin / Tatil Günleri</b>
+        <div class="row" style="margin-top:6px">
+          <input type="date" id="offDate" style="max-width:180px">
+          <button class="btn" id="addOff">Ekle</button>
+        </div>
+        <div id="offList" class="chips" style="margin-top:6px"></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn-primary" id="saveWorkHours">Kaydet</button>
+      <span id="wh_status" class="small"></span>
+    </div>
+  </section>
+
+  <!-- Müşteriler -->
+  <section class="card" style="padding:12px;margin-top:10px">
+    <h4>Müşteriler</h4>
+    <div class="row" style="margin-bottom:6px">
+      <input id="custSearch" placeholder="İsim/Telefon ara" style="max-width:320px">
+      <button class="btn" id="custRefresh">Yenile</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Ad</th><th>Telefon</th><th>Kayıt</th><th>Son Giriş</th><th>İşlem</th></tr></thead>
+        <tbody id="custTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Randevular + toplu işlemler + admin’den ekle -->
+  <section class="card" style="padding:12px;margin-top:10px">
+    <h4>Randevular</h4>
+    <div class="row" style="gap:8px;margin-bottom:6px;flex-wrap:wrap">
+      <input type="date" id="ap_fdate" style="max-width:180px">
+      <select id="ap_fstaff" style="max-width:220px"><option value="">Tüm Ustalar</option></select>
+      <select id="ap_fstatus" style="max-width:180px">
+        <option value="">Tüm Durumlar</option>
+        <option value="pending">Beklemede</option>
+        <option value="approved">Onaylandı</option>
+        <option value="cancelled">İptal</option>
+        <option value="rejected">Reddedildi</option>
+        <option value="deleted">Silindi</option>
+      </select>
+      <button class="btn" id="ap_refresh">Yenile</button>
+      <span class="small" style="margin-left:auto">Toplu: </span>
+      <button class="btn" id="bulk_cancel">İptal</button>
+      <button class="btn" id="bulk_delete">Sil</button>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th><input type="checkbox" id="ap_chkall"></th><th>Tarih</th><th>Saat</th><th>Müşteri</th><th>Hizmet</th><th>Berber</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <tbody id="ap_tbody"></tbody>
+      </table>
+    </div>
+
+    <hr style="margin:12px 0;border:none;border-top:1px solid var(--line)">
+
+    <h4>Admin’den Randevu Oluştur</h4>
+    <div class="grid-2">
+      <div><label>Ad Soyad</label><input id="a_name" placeholder="Müşteri adı"></div>
+      <div><label>Telefon</label><input id="a_phone" placeholder="05xxxxxxxxx" inputmode="tel"></div>
+      <div><label>Usta</label><select id="a_staff"></select></div>
+      <div><label>Hizmet</label><select id="a_svc"></select></div>
+      <div><label>Tarih</label><input type="date" id="a_date"></div>
+      <div>
+        <label>Saat Seçimi</label>
+        <div id="a_slots" class="slotgrid"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <label class="chip"><input type="checkbox" id="a_auto" style="width:auto"> Oto Onay (approved)</label>
+      <button class="btn btn-primary" id="a_create">Randevu Oluştur</button>
+      <span id="a_status" class="small"></span>
+    </div>
+  </section>
+
+</div></div>
+
+<!-- Yeni Şifre Oluştur -->
+<div id="sheetNewPass" class="sheet"><div class="panel customer">
+  <h3>Yeni Şifre Oluştur</h3>
+  <div class="grid-2">
+    <div><label>Yeni Şifre</label><input id="np1" type="password" maxlength="32" placeholder="Yeni şifre"></div>
+    <div><label>Yeni Şifre (Tekrar)</label><input id="np2" type="password" maxlength="32" placeholder="Yeni şifre tekrar"></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button class="btn btn-primary" id="np_save">Kaydet</button>
+    <button class="btn" id="np_cancel">Vazgeç</button>
+    <span id="np_status" class="small"></span>
+  </div>
+</div></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+<!-- jsPDF & Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+/* ===== Helpers ===== */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+function toast(m,ms=2200){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms);}
+const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m}, toHHMM=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+function overlaps(aS,aE,bS,bE){return aS<bE && aE>bS}
+function maskPhone(p){ if(!p) return ''; if(p.startsWith('+90')&&p.length===13){const n=p.slice(3); return `0${n.slice(0,3)} ${n.slice(3,6)} ${n.slice(6,8)} ${n.slice(8,10)}`} return p }
+function normalizePhone(phone){const s=(phone||'').replace(/\s|-/g,''); if(s.startsWith('+')) return s; if(s.startsWith('05')) return '+90'+s.slice(1); if(s.startsWith('0')) return '+90'+s.slice(1); return s}
+
+/* ===== Web Audio beep + vibrate ===== */
+function playAlert(){
+  try{
+    if(navigator.vibrate) navigator.vibrate([60,40,60]);
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.value=880;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.5);
+    o.start(); o.stop(ctx.currentTime+0.5);
+  }catch(e){}
+}
+
+/* ===== Firebase ===== */
+firebase.initializeApp({
+  apiKey:"AIzaSyBtSQ9_5R42BU5ga0cOt1QETkC5nOf2tW4",
+  authDomain:"randevu-81305.firebaseapp.com",
+  projectId:"randevu-81305",
+  storageBucket:"randevu-81305.firebasestorage.app",
+  messagingSenderId:"686048709577",
+  appId:"1:686048709577:web:b2db4eeae83203ca2e3618",
+  measurementId:"G-3ZX91ND545"
+});
+const db=firebase.firestore();
+
+/* ===== Globals ===== */
+const ADMIN_PHONE_E164='+905356749243';
+const ADMIN_PASSWORD='ahmet07';
+let adminOn=false, currentUser=store.get('custSession',null);
+let lastStaff=[], lastSvcs=[], lastAppts=[], lastUsers=[], lastPwResets=[];
+let unsubStaff=null, unsubSvcs=null, unsubAppts=null, unsubUsers=null, unsubPwResets=null;
+let _rs=null, myPrevStatus={}, myUnread=0;
+
+/* ===== Status (TR) ===== */
+function tStatus(s){
+  switch(String(s||'').toLowerCase()){
+    case 'pending'  : return { t:'Onay bekliyor', c:'st-pending'   };
+    case 'approved' : return { t:'Onaylandı',     c:'st-approved'  };
+    case 'cancelled': return { t:'İptal',         c:'st-cancelled' };
+    case 'rejected' : return { t:'Reddedildi',    c:'st-rejected'  };
+    case 'deleted'  : return { t:'Silindi',       c:'st-deleted'   };
+  }
+  return { t:'', c:'' };
+}
+
+/* ===== Sheets ===== */
+const sheet={show:id=>{ $(id).classList.add('show'); document.body.style.overflow='hidden'; }, hide:id=>{ $(id).classList.remove('show'); document.body.style.overflow=''; }};
+['#sheetBell','#sheetAdmin','#sheetCust','#sheetMyAppts','#sheetResched','#sheetManage','#sheetNewPass'].forEach(id=>$(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) sheet.hide(id); }));
+$('#adminOpen').onclick=()=>sheet.show('#sheetAdmin');
+$('#custOpen').onclick =()=>sheet.show('#sheetCust');
+$('#bellBtn').onclick  =()=>sheet.show('#sheetBell');
+$('#manageOpen').onclick=()=>sheet.show('#sheetManage');
+$('#myApptsOpen').onclick=()=>{ sheet.show('#sheetMyAppts'); myUnread=0; $('#myBadge').style.display='none'; };
+
+/* ===== Visibility ===== */
+function setAdmin(on){
+  adminOn=!!on;
+  $('#bellBtn').style.display   = on ? 'inline-flex' : 'none';
+  $('#kpi').style.display       = on ? 'grid' : 'none';
+  $('#manageOpen').style.display= on ? 'inline-flex' : 'none';
+  $('#adminBadge').style.display= on ? 'inline-flex' : 'none';
+  if(on){ store.set('adminSession','on'); store.set('adminPhone', ADMIN_PHONE_E164); }
+  else { store.del('adminSession'); store.del('adminPhone'); }
+}
+function setCust(on){
+  $('#myApptsOpen').style.display = on ? 'inline-flex' : 'none';
+  if(on && currentUser){
+    store.set('custSession', currentUser);
+    const disp = (currentUser.name||'Müşteri').split(' ')[0];
+    $('#custNameShort').textContent = disp;
+    $('#custBadge').style.display = 'inline-flex';
+  }else{
+    $('#custBadge').style.display = 'none';
+    store.del('custSession');
+  }
+}
+setAdmin(store.get('adminSession')==='on' && store.get('adminPhone')===ADMIN_PHONE_E164);
+setCust(!!currentUser);
+
+/* ===== Realtime ===== */
+function startRealtime(){
+  if(unsubStaff)unsubStaff(); if(unsubSvcs)unsubSvcs(); if(unsubAppts)unsubAppts(); if(unsubUsers)unsubUsers(); if(unsubPwResets)unsubPwResets();
+
+  unsubStaff=db.collection('staff').onSnapshot(ss=>{
+    lastStaff=ss.docs.map(d=>({id:d.id,...d.data()}));
+    fillStaff(); fillAdminStaff(); renderStaffList(); renderWorkEditor(); computeSlots(); renderAdminSlots(); if(_rs) computeResched();
+  });
+  unsubSvcs=db.collection('services').onSnapshot(ss=>{
+    lastSvcs=ss.docs.map(d=>({id:d.id,...d.data()}));
+    fillServices(); fillAdminSvcs(); renderServiceList(); computeSlots(); renderAdminSlots();
+  });
+  unsubUsers=db.collection('users').onSnapshot(ss=>{
+    lastUsers=ss.docs.map(d=>({id:d.id,...d.data()})); renderCustomers();
+  });
+  unsubAppts=db.collection('appts').onSnapshot(ss=>{
+    lastAppts=ss.docs.map(d=>({id:d.id,...d.data()}));
+
+    computeSlots(lastAppts); renderAdminSlots(); renderQueue(lastAppts); updateKpi(lastAppts); renderMy(lastAppts); renderAdminAppts(lastAppts);
+    renderWeeklyChart();
+
+    // müşteri bildirimleri
+    if(currentUser){
+      const mine=lastAppts.filter(a=>a.phone===currentUser.phone);
+      mine.forEach(a=>{
+        const prev=myPrevStatus[a.id];
+        if(prev==='pending' && (a.status==='approved'||a.status==='rejected'||a.status==='cancelled'||a.status==='deleted')){
+          myUnread++; const b=$('#myBadge'); b.style.display='inline-flex'; b.textContent=String(myUnread);
+          toast(a.status==='approved'?'✅ Randevunuz onaylandı':a.status==='rejected'?'⛔ Randevunuz reddedildi':a.status==='cancelled'?'ℹ️ Randevunuz iptal edildi':'🗑 Randevunuz silindi');
+          playAlert();
+        }
+        myPrevStatus[a.id]=a.status;
+      });
+    }
+  });
+
+  // Şifre sıfırlama istekleri
+  unsubPwResets=db.collection('pw_resets').onSnapshot(ss=>{
+    lastPwResets=ss.docs.map(d=>({id:d.id,...d.data()}));
+    renderPwQueue(); updateBellCounts();
+  });
+}
+startRealtime();
+
+/* ===== Bell count update (appts + pw_resets) ===== */
+function updateBellCounts(){
+  const pendingAppts = (lastAppts||[]).filter(a=>a.status==='pending').length;
+  const pendingPw    = (lastPwResets||[]).filter(r=>r.status==='pending').length;
+  const total = pendingAppts + pendingPw;
+  $('#bellCount').textContent = String(total);
+  if(adminOn && total>0) $('#bellBtn').classList.add('blink'); else $('#bellBtn').classList.remove('blink');
+}
+
+/* ===== Fillers ===== */
+function fillStaff(){
+  const sel=$('#f_staff'); const cur=sel.value;
+  sel.innerHTML='<option disabled selected>— Seçiniz —</option>'+lastStaff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  if(lastStaff.some(s=>s.id===cur)) sel.value=cur;
+  $('#wh_staff').innerHTML=lastStaff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function fillAdminStaff(){ $('#ap_fstaff').innerHTML='<option value="">Tüm Ustalar</option>'+lastStaff.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''); $('#a_staff').innerHTML=lastStaff.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''); }
+function fillServices(){
+  const sel=$('#f_service'); const cur=sel.value;
+  sel.innerHTML='<option disabled selected>— Seçiniz —</option>'+lastSvcs.map(s=>`<option value="${s.id}">${s.name} — ${s.dur} dk</option>`).join('');
+  if(lastSvcs.some(s=>s.id===cur)) sel.value=cur;
+}
+function fillAdminSvcs(){ $('#a_svc').innerHTML=lastSvcs.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''); }
+
+/* ===== Appointments helpers ===== */
+function conflicts(appts,date,staffId){
+  return (appts||[]).filter(a=>a.date===date&&a.staffId===staffId&&a.status!=='cancelled'&&a.status!=='rejected'&&a.status!=='deleted')
+    .map(a=>({start:toMin(a.time), end:toMin(a.time)+(a.duration||30)}));
+}
+function getIntervalsFor(staff,dateISO){
+  const dow=new Date(dateISO+'T00:00:00').getDay();
+  const by=staff?.hoursByDay?.[dow];
+  if(by && by.open1 && by.close1){
+    const arr=[{open:by.open1, close:by.close1}];
+    if(by.open2 && by.close2) arr.push({open:by.open2, close:by.close2});
+    return arr;
+  }
+  const base=staff?.hours || {open:'09:00',close:'21:00'};
+  return [{open:base.open, close:base.close}];
+}
+function staffWorks(staff,dateISO){
+  const dow=new Date(dateISO+'T00:00:00').getDay();
+  const dayOk = !staff?.days || staff.days.includes(dow);
+  const off   = (staff?.offDates||[]).includes(dateISO);
+  return dayOk && !off;
+}
+
+/* ===== Grid render (30dk sabit) ===== */
+const STEP=30;
+function renderGrid(containerId, staff, svcDur, date){
+  const box=document.getElementById(containerId); box.innerHTML='';
+  if(!staff||!svcDur||!date) return;
+  const works = staffWorks(staff,date);
+  const taken=conflicts(lastAppts,date,staff.id);
+  const intervals=getIntervalsFor(staff,date);
+  intervals.forEach(iv=>{
+    const openM=toMin(iv.open), closeM=toMin(iv.close);
+    for(let t=openM; t+svcDur<=closeM; t+=STEP){
+      const time=toHHMM(t);
+      const busy = !works || taken.some(x=>overlaps(t,t+svcDur,x.start,x.end));
+      const b=document.createElement('button');
+      b.type='button'; b.className='slot'+(busy?' busy':''); b.textContent=time; b.dataset.time=time;
+      b.onclick=()=>{ if(busy) return; [...box.querySelectorAll('.slot')].forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); };
+      box.appendChild(b);
+    }
+  });
+}
+function getSelected(containerId){ return document.querySelector(`#${containerId} .slot.sel`)?.dataset.time||null; }
+
+/* ===== Booking (müşteri) ===== */
+$('#f_date').value=new Date().toISOString().slice(0,10);
+$('#f_staff').onchange=computeSlots; $('#f_service').onchange=computeSlots; $('#f_date').onchange=computeSlots;
+async function computeSlots(){ const sId=$('#f_staff').value, vId=$('#f_service').value, d=$('#f_date').value; if(!sId||!vId||!d){$('#slotgrid').innerHTML='';return;} const s=lastStaff.find(x=>x.id===sId), v=lastSvcs.find(x=>x.id===vId); if(!s||!v)return; renderGrid('slotgrid',s,v.dur||30,d); }
+
+$('#f_book').onclick=async ()=>{
+  const name=$('#f_name').value.trim(), phoneRaw=$('#f_phone').value.trim();
+  const staffId=$('#f_staff').value, svcId=$('#f_service').value, date=$('#f_date').value;
+  const time=getSelected('slotgrid');
+  if(!name||!phoneRaw||!staffId||!svcId||!date||!time){ $('#f_status').textContent='Lütfen tüm alanları doldurun.'; toast('Eksik bilgi'); return; }
+  const phone=normalizePhone(phoneRaw);
+
+  // aynı gün max 2 aktif
+  const same=await db.collection('appts').where('phone','==',phone).where('date','==',date).get();
+  const activeCnt=same.docs.map(d=>d.data()).filter(a=>a.status==='pending'||a.status==='approved').length;
+  if(activeCnt>=2){ toast('Aynı gün en fazla 2 aktif randevu'); return; }
+
+  try{
+    // user bul/oluştur + kalıcı giriş
+    let uid=null; const uq=await db.collection('users').where('phone','==',phone).limit(1).get();
+    if(uq.empty){ const uref=await db.collection('users').add({name,phone,verified:true,pin:'0000',createdAt:Date.now(),lastLogin:Date.now()}); uid=uref.id; }
+    else{ uid=uq.docs[0].id; await db.collection('users').doc(uid).set({name,lastLogin:Date.now()},{merge:true}); }
+    currentUser={id:uid,name,phone}; store.set('custSession',currentUser); setCust(true);
+
+    const svc=(await db.collection('services').doc(svcId).get()).data();
+    const st =(await db.collection('staff').doc(staffId).get()).data();
+    await db.collection('appts').add({
+      userId:uid,name,phone,serviceId:svcId,serviceName:svc?.name||'Hizmet',duration:svc?.dur||30,price:svc?.price||0,
+      staffId,staffName:st?.name||'Usta',date,time,status:'pending',createdAt:Date.now()
+    });
+    $('#f_status').textContent='Randevu alındı (beklemede).'; toast('Randevu oluşturuldu');
+  }catch(e){ console.error(e); toast('Hata: Firestore izinleri?'); }
+};
+
+/* ===== Admin: bell/queue ===== */
+function renderQueue(list){
+  const box=$('#queueList');
+  const appts=(list||[]).filter(a=>a.status==='pending').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const pwRows=(lastPwResets||[]).filter(r=>r.status==='pending').sort((a,b)=>a.createdAt-b.createdAt);
+
+  const pwHTML = pwRows.map(r=>`
+    <div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0;background:#23262c">
+      <div style="flex:1 1 auto;min-width:0">
+        <b>Şifre Sıfırlama İsteği</b> • ${r.name} (${maskPhone(r.phone)})
+        <span class="badge-status st-pending" style="margin-left:8px">Onay bekliyor</span>
+      </div>
+      <button class="btn" onclick="adminMakeTempPass('${r.id}')">Yeni Şifre Oluştur</button>
+      <button class="btn" onclick="adminDismissPw('${r.id}')">Yoksay</button>
+    </div>
+  `).join('');
+
+  const apHTML = appts.map(a=>`
+    <div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0">
+      <div style="flex:1 1 auto;min-width:0">
+        <b>${a.date} ${a.time}</b> • ${a.name} • ${a.serviceName} / ${a.staffName}
+        <span class="badge-status ${tStatus(a.status).c}" style="margin-left:8px">${tStatus(a.status).t}</span>
+      </div>
+      <button class="btn" onclick="approve('${a.id}')">Onayla</button>
+      <button class="btn" onclick="reject('${a.id}')">Reddet</button>
+      <button class="btn" onclick="delAppt('${a.id}')">Sil</button>
+    </div>`).join('');
+
+  const finalHTML = (pwHTML + apHTML) || 'Kuyruk boş.';
+  box.innerHTML = finalHTML;
+  updateBellCounts();
+}
+window.approve=async(id)=>{try{await db.collection('appts').doc(id).set({status:'approved'},{merge:true});toast('Onaylandı');}catch(e){toast('Hata');}}
+window.reject =async(id)=>{try{await db.collection('appts').doc(id).set({status:'rejected'},{merge:true});toast('Reddedildi');}catch(e){toast('Hata');}}
+window.delAppt=async(id)=>{try{await db.collection('appts').doc(id).set({status:'deleted'},{merge:true});toast('Silindi');}catch(e){toast('Hata');}}
+
+/* ===== KPI ===== */
+function updateKpi(list){
+  if(!adminOn) return;
+  const today=new Date().toISOString().slice(0,10);
+  const d=list.filter(a=>a.date===today);
+  $('#kpiToday').textContent=String(d.length);
+
+  const ap = d.filter(a=>a.status==='approved').length;
+  const pe = d.filter(a=>a.status==='pending').length;
+  const ca = d.filter(a=>a.status==='cancelled').length;
+  const rj = d.filter(a=>a.status==='rejected').length;
+  const dl = d.filter(a=>a.status==='deleted').length;
+
+  $('#kpiOBI').innerHTML = `
+    <span class="badge-status st-approved">${ap} Onaylandı</span>
+    <span class="badge-status st-pending">${pe} Beklemede</span>
+    <span class="badge-status st-cancelled">${ca} İptal</span>
+    ${rj?`<span class="badge-status st-rejected">${rj} Reddedildi</span>`:''}
+    ${dl?`<span class="badge-status st-deleted">${dl} Silindi</span>`:''}
+  `;
+
+  const now=new Date(); const ws=new Date(now); ws.setDate(now.getDate()-now.getDay()); const we=new Date(ws); we.setDate(ws.getDate()+6);
+  const inWeek=list.filter(a=>a.status!=='rejected' && a.date>=ws.toISOString().slice(0,10) && a.date<=we.toISOString().slice(0,10));
+  $('#kpiWeek').innerHTML = `<span class="badge-status st-approved">${inWeek.length} Haftalık Toplam</span>`;
+}
+
+/* ===== Müşteriler ===== */
+function renderCustomers(){
+  const term=($('#custSearch')?.value||'').toLowerCase();
+  const tb=$('#custTbody'); if(!tb) return;
+  const rows=(lastUsers||[])
+    .filter(u=>!term || (u.name||'').toLowerCase().includes(term) || (u.phone||'').toLowerCase().includes(term))
+    .sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
+  tb.innerHTML=rows.map(u=>`
+    <tr><td>${u.name||''}</td><td>${maskPhone(u.phone)||''}</td>
+    <td>${u.createdAt?new Date(u.createdAt).toLocaleString('tr-TR'):'-'}</td>
+    <td>${u.lastLogin?new Date(u.lastLogin).toLocaleString('tr-TR'):'-'}</td>
+    <td><button class="btn" onclick="delUser('${u.id}')">Sil</button></td></tr>
+  `).join('') || `<tr><td colspan="5" class="small">Müşteri yok</td></tr>`;
+}
+$('#custSearch').addEventListener('input',renderCustomers);
+$('#custRefresh').addEventListener('click',renderCustomers);
+window.delUser=async(id)=>{ if(!confirm('Bu müşteriyi silmek istiyor musunuz?')) return; try{ await db.collection('users').doc(id).delete(); toast('Müşteri silindi'); }catch(e){ toast('Hata: Müşteri silinemedi'); } };
+
+/* ===== Admin • Randevular tablosu + toplu ===== */
+function renderAdminAppts(list){
+  const tb=$('#ap_tbody'); if(!tb) return;
+  const fdate=$('#ap_fdate').value||'', fstaff=$('#ap_fstaff').value||'', fstat=$('#ap_fstatus').value||'';
+  let rows=[...(list||[])];
+  if(fdate) rows=rows.filter(a=>a.date===fdate);
+  if(fstaff) rows=rows.filter(a=>a.staffId===fstaff);
+  if(fstat) rows=rows.filter(a=>a.status===fstat);
+  rows.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  tb.innerHTML=rows.map(a=>{
+    const act=a.status==='pending'
+      ? `<button class="btn" onclick="approve('${a.id}')">Onayla</button> <button class="btn" onclick="reject('${a.id}')">Reddet</button>`
+      : a.status==='approved' ? `<button class="btn" onclick="setCancelled('${a.id}')">İptal</button>` : '';
+    return `<tr>
+      <td><input type="checkbox" class="ap_chk" data-id="${a.id}"></td>
+      <td>${a.date}</td><td>${a.time}</td>
+      <td>${a.name} (${maskPhone(a.phone)})</td>
+      <td>${a.serviceName||''}</td>
+      <td>${a.staffName||''}</td>
+      <td><span class="badge-status ${tStatus(a.status).c}">${tStatus(a.status).t}</span></td>
+      <td class="row" style="gap:6px">${act} <button class="btn" onclick="delAppt('${a.id}')">Sil</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="small">Randevu yok</td></tr>`;
+}
+$('#ap_refresh').onclick=()=>renderAdminAppts(lastAppts);
+$('#ap_fdate').onchange=()=>renderAdminAppts(lastAppts);
+$('#ap_fstaff').onchange=()=>renderAdminAppts(lastAppts);
+$('#ap_fstatus').onchange=()=>renderAdminAppts(lastAppts);
+$('#ap_chkall').onchange=e=>$$('.ap_chk').forEach(c=>c.checked=e.target.checked);
+$('#bulk_cancel').onclick=async()=>{const ids=$$('.ap_chk:checked').map(x=>x.dataset.id); for(const id of ids){ await setCancelled(id,true);} toast('Seçili randevular iptal edildi');}
+$('#bulk_delete').onclick=async()=>{const ids=$$('.ap_chk:checked').map(x=>x.dataset.id); for(const id of ids){ await db.collection('appts').doc(id).set({status:'deleted'},{merge:true}); } toast('Seçili randevular silindi');}
+window.setCancelled=async(id,silent=false)=>{ try{ await db.collection('appts').doc(id).set({status:'cancelled'},{merge:true}); if(!silent) toast('İptal edildi'); }catch(e){ toast('Hata'); } }
+
+/* ===== Admin • Ustalar/Hizmetler ===== */
+function renderStaffList(){
+  $('#staffList').innerHTML=(lastStaff||[]).sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(s=>`
+    <li style="display:flex;gap:8px;align-items:center;margin:6px 0">
+      <span style="flex:1">${s.name}</span>
+      <button class="btn" onclick="delStaff('${s.id}')">Sil</button>
+    </li>`).join('') || '—';
+  $('#wh_staff').innerHTML=lastStaff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  $('#a_staff').innerHTML=lastStaff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  renderWorkEditor();
+}
+window.delStaff=async(id)=>{ try{await db.collection('staff').doc(id).delete(); toast('Usta silindi');}catch(e){toast('Hata: Usta silinemedi');} };
+$('#addStaff').onclick=async ()=>{
+  const name=$('#newStaffName').value.trim(); if(!name){toast('Usta adı gerekli');return;}
+  try{
+    await db.collection('staff').add({name,days:[1,2,3,4,5,6],hours:{open:'09:00',close:'21:00'},hoursByDay:{},offDates:[]});
+    $('#newStaffName').value=''; toast('Usta eklendi');
+  }catch(e){ toast('Hata: Usta eklenemedi'); }
+};
+
+function renderServiceList(){
+  $('#svcList').innerHTML=(lastSvcs||[]).sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).map(s=>`
+    <li style="display:flex;gap:8px;align-items:center;margin:6px 0">
+      <span style="flex:1">${s.name} — ${s.dur} dk / ${s.price||0} TL</span>
+      <button class="btn" onclick="delSvc('${s.id}')">Sil</button>
+    </li>`).join('') || '—';
+  $('#a_svc').innerHTML=lastSvcs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+window.delSvc=async(id)=>{ try{await db.collection('services').doc(id).delete(); toast('Hizmet silindi');}catch(e){toast('Hata: Hizmet silinemedi');} };
+$('#addSvc').onclick=async ()=>{
+  const name=$('#newSvcName').value.trim(), dur=parseInt($('#newSvcDur').value||'30',10), price=parseInt($('#newSvcPrice').value||'0',10);
+  if(!name){toast('Hizmet adı gerekli');return;}
+  try{
+    await db.collection('services').add({name,dur,price});
+    $('#newSvcName').value=''; $('#newSvcDur').value=''; $('#newSvcPrice').value='';
+    toast('Hizmet eklendi');
+  }catch(e){ toast('Hata: Hizmet eklenemedi'); }
+};
+
+/* ===== Çalışma saatleri editörü ===== */
+const DAYS=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+function renderWorkEditor(){
+  const sid=$('#wh_staff').value || lastStaff[0]?.id; if(!sid){ $('#wh_staff').innerHTML=''; return; }
+  $('#wh_staff').value=sid;
+  const staff=lastStaff.find(s=>s.id===sid); if(!staff) return;
+
+  const dayWrap=$('#wh_days'); dayWrap.innerHTML='';
+  for(let i=0;i<7;i++){
+    const chip=document.createElement('label'); chip.className='chip';
+    const chk=document.createElement('input'); chk.type='checkbox'; chk.style.width='auto'; chk.dataset.dow=String(i);
+    chk.checked=(staff.days||[1,2,3,4,5,6]).includes(i);
+    chip.append(chk, document.createTextNode(' '+DAYS[i]));
+    dayWrap.appendChild(chip);
+  }
+
+  const iv=$('#wh_intervals'); iv.innerHTML='';
+  const by=staff.hoursByDay||{};
+  for(let i=0;i<7;i++){
+    const row=document.createElement('div'); row.className='row'; row.style.margin='4px 0';
+    const d=by[i]||{};
+    row.innerHTML=`
+      <div style="min-width:60px"><b>${DAYS[i]}</b></div>
+      <input type="time" data-k="open1"  data-dow="${i}" value="${d.open1||staff.hours?.open||'09:00'}" style="max-width:120px">
+      <span>–</span>
+      <input type="time" data-k="close1" data-dow="${i}" value="${d.close1||staff.hours?.close||'21:00'}" style="max-width:120px">
+      <span style="width:12px"></span>
+      <input type="time" data-k="open2"  data-dow="${i}" value="${d.open2||''}" style="max-width:120px">
+      <span>–</span>
+      <input type="time" data-k="close2" data-dow="${i}" value="${d.close2||''}" style="max-width:120px">`;
+    iv.appendChild(row);
+  }
+
+  renderOffList(staff);
+}
+$('#wh_staff').addEventListener('change',renderWorkEditor);
+
+function renderOffList(staff){
+  const wrap=$('#offList'); wrap.innerHTML='';
+  (staff.offDates||[]).sort().forEach(d=>{
+    const chip=document.createElement('span'); chip.className='chip'; chip.textContent=d+' ';
+    const b=document.createElement('button'); b.className='btn'; b.textContent='Sil';
+    b.onclick=async()=>{ const list=(staff.offDates||[]).filter(x=>x!==d); await db.collection('staff').doc(staff.id).set({offDates:list},{merge:true}); toast('İzin silindi'); };
+    chip.appendChild(b); wrap.appendChild(chip);
+  });
+}
+$('#addOff').onclick=async ()=>{
+  const sid=$('#wh_staff').value; const staff=lastStaff.find(s=>s.id===sid); const d=$('#offDate').value; if(!d||!staff) return;
+  const set=new Set(staff.offDates||[]); set.add(d); await db.collection('staff').doc(sid).set({offDates:[...set]},{merge:true}); toast('İzin eklendi');
+};
+
+$('#saveWorkHours').onclick=async ()=>{
+  const sid=$('#wh_staff').value; if(!sid){toast('Usta seçiniz');return;}
+  const staff=lastStaff.find(s=>s.id===sid); if(!staff) return;
+  const days=[...document.querySelectorAll('#wh_days input[type="checkbox"]')].filter(x=>x.checked).map(x=>parseInt(x.dataset.dow,10));
+  const hoursByDay={};
+  $$('#wh_intervals input[type="time"]').forEach(inp=>{
+    const i=parseInt(inp.dataset.dow,10); const k=inp.dataset.k; hoursByDay[i]=hoursByDay[i]||{}; hoursByDay[i][k]=inp.value||'';
+  });
+  try{
+    await db.collection('staff').doc(sid).set({
+      days,hoursByDay,
+      hours:{open:hoursByDay[1]?.open1||'09:00',close:hoursByDay[1]?.close1||'21:00'}
+    },{merge:true});
+    $('#wh_status').textContent='Kaydedildi.'; toast('Çalışma saatleri kaydedildi'); computeSlots(); renderAdminSlots(); if(_rs) computeResched();
+  }catch(e){ toast('Hata: Çalışma saatleri kaydedilemedi'); }
+};
+
+/* ===== Admin’den randevu ===== */
+function renderAdminSlots(){
+  const sId=$('#a_staff').value, vId=$('#a_svc').value, d=$('#a_date').value;
+  const box=$('#a_slots'); box.innerHTML='';
+  if(!sId||!vId||!d) return;
+  const s=lastStaff.find(x=>x.id===sId), v=lastSvcs.find(x=>x.id===vId); if(!s||!v) return;
+  renderGrid('a_slots', s, v.dur||30, d);
+}
+$('#a_staff').addEventListener('change',renderAdminSlots);
+$('#a_svc').addEventListener('change',renderAdminSlots);
+$('#a_date').addEventListener('change',renderAdminSlots);
+$('#a_date').value=new Date().toISOString().slice(0,10);
+
+$('#a_create').onclick=async ()=>{
+  const name=$('#a_name').value.trim(), phoneRaw=$('#a_phone').value.trim();
+  const staffId=$('#a_staff').value, svcId=$('#a_svc').value, date=$('#a_date').value, time=getSelected('a_slots');
+  const auto=$('#a_auto').checked;
+  if(!name||!phoneRaw||!staffId||!svcId||!date||!time){ $('#a_status').textContent='Eksik bilgi'; toast('Eksik bilgi'); return; }
+  const phone=normalizePhone(phoneRaw);
+  try{
+    let uid=null; const uq=await db.collection('users').where('phone','==',phone).limit(1).get();
+    if(uq.empty){ const uref=await db.collection('users').add({name,phone,verified:true,pin:'0000',createdAt:Date.now(),lastLogin:Date.now()}); uid=uref.id; }
+    else{ uid=uq.docs[0].id; await db.collection('users').doc(uid).set({name,lastLogin:Date.now()},{merge:true}); }
+    const svc=(await db.collection('services').doc(svcId).get()).data();
+    const st =(await db.collection('staff').doc(staffId).get()).data();
+    await db.collection('appts').add({
+      userId:uid,name,phone,serviceId:svcId,serviceName:svc?.name||'Hizmet',duration:svc?.dur||30,price:svc?.price||0,
+      staffId,staffName:st?.name||'Usta',date,time,status:auto?'approved':'pending',createdAt:Date.now()
+    });
+    $('#a_status').textContent=auto?'Oluşturuldu (onaylı)':'Oluşturuldu (beklemede)'; toast('Admin randevu eklendi');
+  }catch(e){ console.error(e); $('#a_status').textContent='Hata'; toast('Hata'); }
+};
+
+/* ===== Müşteri randevularım + takvime ekle ===== */
+function buildEventPayload(a){
+  const title = `${a.serviceName} - ${a.staffName||'Berber'}`;
+  const desc  = `Müşteri: ${a.name} (${maskPhone(a.phone)})
+Hizmet: ${a.serviceName}
+Berber: ${a.staffName||'-'}
+Tarih: ${a.date} ${a.time}
+Süre: ${a.duration||30} dk`;
+  const location='Ahmet Tekeli Erkek Kuaförü';
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul';
+  const [hh,mm]=a.time.split(':').map(Number);
+  const start=new Date(a.date+'T00:00:00'); start.setHours(hh,mm,0,0);
+  const end=new Date(start.getTime()+ (a.duration||30)*60000);
+  const ymd = d=>`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
+  return {title,desc,location,tz,gStart:ymd(start),gEnd:ymd(end),start,end};
+}
+function openGoogleCalendar(a){
+  const p=buildEventPayload(a);
+  const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    + '&text=' + encodeURIComponent(p.title)
+    + '&dates=' + encodeURIComponent(`${p.gStart}/${p.gEnd}`)
+    + '&details=' + encodeURIComponent(p.desc)
+    + '&location=' + encodeURIComponent(p.location)
+    + '&ctz=' + encodeURIComponent(p.tz);
+  window.open(url, '_blank');
+}
+function downloadICS(a){
+  const p=buildEventPayload(a);
+  const dt = d=>`${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}${String(d.getUTCHours()).padStart(2,'0')}${String(d.getUTCMinutes()).padStart(2,'0')}${String(d.getUTCSeconds()).padStart(2,'0')}Z`;
+  const uid=`${a.id||Math.random().toString(36).slice(2)}@ahmettekeli`;
+  const ics=`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//AhmetTekeli//Randevu//TR
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${dt(new Date())}
+DTSTART:${dt(p.start)}
+DTEND:${dt(p.end)}
+SUMMARY:${p.title}
+DESCRIPTION:${p.desc.replace(/\n/g,'\\n')}
+LOCATION:${p.location}
+END:VEVENT
+END:VCALENDAR`;
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'}); const aEl=document.createElement('a');
+  aEl.href=URL.createObjectURL(blob); aEl.download=`randevu_${a.date}_${a.time.replace(':','')}.ics`; document.body.appendChild(aEl); aEl.click(); setTimeout(()=>{URL.revokeObjectURL(aEl.href); aEl.remove();},0);
+}
+
+function renderMy(list){
+  const tb=$('#my_tbody'); if(!tb) return;
+  if(!currentUser){ tb.innerHTML='<tr><td colspan="6" class="small">Lütfen müşteri girişi yapın.</td></tr>'; return; }
+  const today=new Date().toISOString().slice(0,10);
+  let rows=(list||[]).filter(a=>a.phone===currentUser.phone);
+  const f=$('#my_filter').value||'upcoming';
+  if(f==='upcoming') rows=rows.filter(a=>a.date>=today);
+  else if(f==='past') rows=rows.filter(a=>a.date<today);
+  rows.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  tb.innerHTML=rows.map(a=>{
+    const canCancel=(a.status==='pending'||a.status==='approved');
+    return `<tr>
+      <td>${a.date}</td><td>${a.time}</td><td>${a.serviceName||''}</td><td>${a.staffName||''}</td>
+      <td><span class="badge-status ${tStatus(a.status).c}">${tStatus(a.status).t}</span></td>
+      <td class="row" style="gap:6px">
+        <button class="btn" onclick="openResched('${a.id}')">Değiştir</button>
+        ${canCancel?`<button class="btn" onclick="cancelMine('${a.id}')">İptal</button>`:''}
+        <button class="btn" onclick="openGoogleCalendar(${JSON.stringify({id:'__',date:a.date,time:a.time,duration:a.duration,serviceName:a.serviceName,staffName:a.staffName,name:a.name,phone:a.phone})})">Google</button>
+        <button class="btn" onclick='(function(){downloadICS(${JSON.stringify({id:a.id,date:a.date,time:a.time,duration:a.duration,serviceName:a.serviceName,staffName:a.staffName,name:a.name,phone:a.phone})})})()'>ICS</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="small">Randevu yok</td></tr>';
+}
+$('#my_filter').onchange=()=>renderMy(lastAppts);
+$('#my_refresh').onclick=()=>renderMy(lastAppts);
+window.cancelMine=async(id)=>{if(!confirm('İptal edilsin mi?'))return;try{await db.collection('appts').doc(id).set({status:'cancelled'},{merge:true});toast('İptal edildi');}catch(e){toast('Hata');}}
+
+/* ===== Reschedule ===== */
+async function openResched(id){
+  if(!currentUser) return;
+  const doc=await db.collection('appts').doc(id).get(); if(!doc.exists) return toast('Bulunamadı');
+  const a=doc.data(); if(a.phone!==currentUser.phone) return toast('Yetkisiz');
+  _rs={id,staffId:a.staffId,duration:a.duration,date:a.date};
+  $('#rs_date').value=a.date; computeResched(); sheet.show('#sheetResched');
+}
+function computeResched(){
+  if(!_rs) return;
+  const staff=lastStaff.find(s=>s.id===_rs.staffId); if(!staff) return;
+  renderGrid('rs_grid',staff,_rs.duration,_rs.date);
+}
+$('#rs_date').onchange=()=>{ if(_rs){ _rs.date=$('#rs_date').value; computeResched(); } };
+$('#rs_cancel').onclick=()=>{_rs=null; sheet.hide('#sheetResched');}
+$('#rs_save').onclick=async ()=>{
+  if(!_rs) return;
+  const time=getSelected('rs_grid'); if(!time){ $('#rs_status').textContent='Saat seçin'; return; }
+  try{ await db.collection('appts').doc(_rs.id).set({date:_rs.date,time,status:'pending'},{merge:true}); toast('Güncellendi (beklemede)'); _rs=null; sheet.hide('#sheetResched'); }catch(e){toast('Hata');}
+};
+
+/* ===== Admin Login ===== */
+$('#adminLoginBtn').onclick=()=>{
+  try{
+    const pass = ($('#adminPass').value||'').trim();
+    if(pass === ADMIN_PASSWORD){
+      setAdmin(true);
+      $('#adminStatus').textContent = 'Giriş başarılı';
+      sheet.hide('#sheetAdmin');
+      toast('Admin açıldı');
+    } else {
+      $('#adminStatus').textContent = 'Şifre hatalı';
+    }
+  }catch(err){
+    console.error('Admin login hata:', err);
+    $('#adminStatus').textContent = 'Sunucu hatası';
+  }
+};
+$('#adminLogoutBtn').onclick=()=>{ setAdmin(false); $('#adminStatus').textContent='Çıkış yapıldı'; toast('Admin kapandı'); };
+
+/* ===== Müşteri Login / Kayıt + Şifremi Unuttum ===== */
+$('#c_toggle').addEventListener('click', (e)=>{
+  e.preventDefault();
+  const inp = $('#c_pin');
+  inp.type = (inp.type === 'password') ? 'text' : 'password';
+  $('#c_toggle').textContent = (inp.type === 'password') ? '👁' : '🙈';
+});
+$('#c_forgot').addEventListener('click', async ()=>{
+  const name  = ($('#c_name').value||'').trim();
+  const phone = normalizePhone($('#c_phone').value||'');
+  if(!name || !phone){
+    $('#c_status').textContent = 'Ad ve Telefon gerekli.';
+    toast('Ad ve Telefon gerekli');
+    return;
+  }
+  try{
+    let uid=null;
+    const q = await db.collection('users').where('phone','==',phone).limit(1).get();
+    if(q.empty){
+      const uref = await db.collection('users').add({ name, phone, verified:true, createdAt:Date.now(), lastLogin:Date.now() });
+      uid = uref.id;
+    }else{
+      uid = q.docs[0].id;
+      await db.collection('users').doc(uid).set({ name }, { merge:true });
+    }
+    await db.collection('pw_resets').add({ userId: uid, name, phone, status:'pending', createdAt: Date.now() });
+    $('#c_status').textContent = 'İsteğiniz alındı. Yönetici onayı sonrası geçici şifre oluşturulacaktır.';
+    toast('Şifre sıfırlama isteği gönderildi');
+  }catch(err){
+    console.error(err); $('#c_status').textContent='Sunucu hatası';
+  }
+});
+window.adminMakeTempPass = async (rid)=>{
+  try{
+    const doc = await db.collection('pw_resets').doc(rid).get();
+    if(!doc.exists) return toast('İstek bulunamadı');
+    const r = doc.data();
+    const tmp = String(Math.floor(100000 + Math.random()*900000));
+    const uq = await db.collection('users').where('phone','==',r.phone).limit(1).get();
+    if(uq.empty) return toast('Kullanıcı bulunamadı');
+    const uid = uq.docs[0].id;
+    await db.collection('users').doc(uid).set({ pin: tmp, forcePwChange: true }, { merge:true });
+    await db.collection('pw_resets').doc(rid).set({ status:'completed', completedAt: Date.now(), tempPass: tmp }, { merge:true });
+    toast('Geçici şifre oluşturuldu');
+    playAlert();
+  }catch(e){ console.error(e); toast('Hata'); }
+};
+window.adminDismissPw = async (rid)=>{
+  try{
+    await db.collection('pw_resets').doc(rid).set({ status:'rejected', completedAt: Date.now() }, { merge:true });
+    toast('İstek yoksayıldı');
+  }catch(e){ console.error(e); toast('Hata'); }
+};
+
+async function maybeAskNewPassword(uid){
+  try{
+    const udoc = await db.collection('users').doc(uid).get();
+    const u = udoc.data()||{};
+    if(u.forcePwChange){ sheet.show('#sheetNewPass'); }
+  }catch(e){ console.error(e); }
+}
+$('#np_save').addEventListener('click', async ()=>{
+  try{
+    const p1 = ($('#np1').value||'').trim();
+    const p2 = ($('#np2').value||'').trim();
+    if(p1.length<4){ $('#np_status').textContent='En az 4 karakter.'; return; }
+    if(p1!==p2){ $('#np_status').textContent='Şifreler uyuşmuyor.'; return; }
+    if(!currentUser?.id) { $('#np_status').textContent='Oturum yok.'; return; }
+    await db.collection('users').doc(currentUser.id).set({ pin: p1, forcePwChange: false }, { merge:true });
+    $('#np_status').textContent='Şifre güncellendi.'; toast('Şifre güncellendi');
+    setTimeout(()=>sheet.hide('#sheetNewPass'), 300);
+  }catch(e){ console.error(e); $('#np_status').textContent='Hata'; }
+});
+$('#np_cancel').addEventListener('click', ()=>sheet.hide('#sheetNewPass'));
+
+$('#c_login').onclick = async ()=>{
+  const name  = ($('#c_name').value||'').trim();
+  const phone = normalizePhone($('#c_phone').value||'');
+  const pin   = ($('#c_pin').value||'').trim();
+  if(!name || !phone || pin.length < 4){
+    $('#c_status').textContent='Ad/Telefon ve şifre (min 4) gerekli.'; return;
+  }
+  try{
+    const q = await db.collection('users').where('phone','==',phone).limit(1).get();
+    let uid;
+    if(q.empty){
+      const uref = await db.collection('users').add({ name, phone, verified:true, pin, createdAt:Date.now(), lastLogin:Date.now() });
+      uid = uref.id;
+    } else {
+      const doc = q.docs[0], u = doc.data(); uid = doc.id;
+      if(!u.pin){
+        await db.collection('users').doc(uid).set({ pin, name, lastLogin:Date.now() }, { merge:true });
+      }else if(u.pin !== pin){
+        $('#c_status').textContent='Şifre hatalı.'; return;
+      }else{
+        await db.collection('users').doc(uid).set({ name, lastLogin:Date.now() }, { merge:true });
+      }
+    }
+    currentUser = { id: uid, name, phone };
+    setCust(true);
+    $('#c_status').textContent='Giriş başarılı.';
+    toast('Müşteri girişi tamam');
+    setTimeout(()=>sheet.hide('#sheetCust'), 300);
+    maybeAskNewPassword(uid);
+    $('#f_name').value  = name;
+    $('#f_phone').value = phone.replace('+90','0');
+  }catch(err){
+    console.error('Müşteri login hata:', err);
+    $('#c_status').textContent = (err?.code==='permission-denied') ? 'Firestore izin hatası: Kuralları yayınlayın.' : 'Sunucu hatası';
+    toast('⚠️ Giriş başarısız');
+  }
+};
+
+/* ===== PDF + Haftalık Grafik ===== */
+function weekRange(today=new Date()){
+  const d = new Date(today); const day = d.getDay();
+  const diffToMonday = (day===0? -6 : 1 - day);
+  const ws = new Date(d); ws.setDate(d.getDate()+diffToMonday);
+  const we = new Date(ws); we.setDate(ws.getDate()+6);
+  const iso = x=>x.toISOString().slice(0,10);
+  return {ws, we, wsISO: iso(ws), weISO: iso(we)};
+}
+function getTodayAppointments(list){
+  const t = new Date().toISOString().slice(0,10);
+  return (list||[]).filter(a=>a.date===t).sort((a,b)=>(a.time).localeCompare(b.time));
+}
+async function downloadTodayPdf(){
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'a4'});
+    const todayStr = new Date().toLocaleDateString('tr-TR');
+
+    const rows = getTodayAppointments(lastAppts);
+    const total = rows.length;
+    const c = s=>rows.filter(x=>x.status===s).length;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.text('Ahmet Tekeli Erkek Kuaförü — Günlük Rapor', 40, 50);
+    doc.setFont('helvetica','normal'); doc.setFontSize(11);
+    doc.text(`Tarih: ${todayStr}`, 40, 70);
+    doc.text(`Toplam: ${total} | Onaylandı: ${c('approved')} | Beklemede: ${c('pending')} | İptal: ${c('cancelled')} | Reddedildi: ${c('rejected')} | Silindi: ${c('deleted')}`, 40, 88);
+
+    const startY = 115; let y = startY;
+    doc.setFont('helvetica','bold');
+    doc.text('Saat', 40, y);
+    doc.text('Müşteri', 100, y);
+    doc.text('Hizmet', 260, y);
+    doc.text('Berber', 430, y);
+    doc.text('Durum', 520, y);
+    doc.setLineWidth(0.5); doc.line(40, y+6, 555, y+6);
+    doc.setFont('helvetica','normal');
+
+    y += 22;
+    const T = s => tStatus(s).t || '';
+    rows.forEach(a=>{
+      if(y>760){ doc.addPage(); y=60; }
+      doc.text(a.time, 40, y);
+      doc.text(a.name||'', 100, y);
+      doc.text((a.serviceName||''), 260, y, {maxWidth:150});
+      doc.text((a.staffName||''), 430, y, {maxWidth:80});
+      doc.text(T(a.status), 520, y);
+      y += 18;
+    });
+
+    doc.save(`gunluk_rapor_${new Date().toISOString().slice(0,10)}.pdf`);
+  }catch(e){ console.error(e); toast('PDF oluşturulamadı'); }
+}
+function computeWeekData(list){
+  const {wsISO,weISO} = weekRange(new Date());
+  const inWeek = (list||[]).filter(a=>a.date>=wsISO && a.date<=weISO);
+  const dayIndex = d=>new Date(d+'T00:00:00').getDay();
+  const map = Array.from({length:7},()=>({all:0, approved:0, pending:0, cancelled:0, rejected:0, deleted:0}));
+  inWeek.forEach(a=>{
+    const idx = dayIndex(a.date);
+    const bucket = map[idx]; bucket.all++; const st=(a.status||'').toLowerCase(); if(bucket[st]!=null) bucket[st]++;
+  });
+  const labels = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+  return {labels, map};
+}
+let _chartInstance=null;
+function renderWeeklyChart(){
+  const ctx = document.getElementById('weekChart');
+  if(!ctx) return;
+  const {labels, map} = computeWeekData(lastAppts);
+  const ds = type => map.map(x=>x[type]||0);
+  const data = {
+    labels,
+    datasets: [
+      { label: 'Onaylandı',  data: ds('approved') },
+      { label: 'Beklemede',  data: ds('pending')  },
+      { label: 'İptal',      data: ds('cancelled')},
+      { label: 'Reddedildi', data: ds('rejected') },
+      { label: 'Silindi',    data: ds('deleted')  }
+    ]
+  };
+  const options = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top' } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } };
+  if(_chartInstance){ _chartInstance.destroy(); }
+  _chartInstance = new Chart(ctx, { type:'bar', data, options });
+}
+
+/* ===== Boot ===== */
+(function boot(){
+  $('#f_date').value=new Date().toISOString().slice(0,10);
+  if(currentUser){ $('#f_name').value=currentUser.name||''; $('#f_phone').value=(currentUser.phone||'').replace('+90','0'); setCust(true); }
+  $('#ap_fdate').value=new Date().toISOString().slice(0,10);
+
+  // butonlar
+  document.getElementById('btnPdfToday')?.addEventListener('click', downloadTodayPdf);
+  document.getElementById('btnRefreshChart')?.addEventListener('click', renderWeeklyChart);
+})();
+</script>
+</body>
+</html>
