@@ -813,7 +813,7 @@ function renderWorkEditor(){
     const row=document.createElement('div'); row.className='row'; row.style.margin='4px 0';
     const d=by[i]||{};
     row.innerHTML=`
-      <div style="min-width:54px"><b>${DAYS[i]}</b></div>
+      <div style="min-width:30px"><b>${DAYS[i]}</b></div>
       <input type="time" data-k="open1"  data-dow="${i}" value="${d.open1||staff.hours?.open||'09:00'}">
       <span>–</span>
       <input type="time" data-k="close1" data-dow="${i}" value="${d.close1||staff.hours?.close||'21:00'}">
